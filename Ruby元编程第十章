@@ -1,0 +1,71 @@
+{
+ "cells": [
+  {
+   "cell_type": "code",
+   "execution_count": 3,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "SyntaxError: unexpected keyword_end, expecting end-of-input\n"
+     ]
+    }
+   ],
+   "source": [
+    "module AcitveRecord\n",
+    "  module Validations(base)\n",
+    "    base.extend ClassMethods\n",
+    "  end\n",
+    "  \n",
+    "  module ClassMethods\n",
+    "  end\n",
+    "end"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "`Validations`的实例方法会变成`Base`的实例方法。"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "`ActiveRecord::Base`包含`Validations`模块时，使用`ActiveRecord::Validations::ClassMethods`模块对`Base`进行了扩展。于是`ClassMethods`中的方法成了`Base`的类方法。"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "其实只要加一行就能解决问题"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "extend Validations::ClassMethods"
+   ]
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Ruby 2.4.1",
+   "language": "ruby",
+   "name": "ruby"
+  },
+  "language_info": {
+   "file_extension": ".rb",
+   "mimetype": "application/x-ruby",
+   "name": "ruby",
+   "version": "2.4.1"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 2
+}
