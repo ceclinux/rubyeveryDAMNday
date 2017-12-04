@@ -1,0 +1,42 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "应到程序会事先写在内存中。计算机在启动时会首先执行这个程序"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "解释器根据程序中的算法执行运算。简单来说，它是一种惯用语执行程序的软件。如果执行的程序由虚拟机器语言或类似于机器语言的程序设计语言写成，这种软件也称为**虚拟机**。"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "collapsed": true
+   },
+   "source": [
+    "编译器能将某种语言写成的程序转换成另一种语言的程序。通常它会将原程序转换为机器语言程序。编译器转换程序的行为称为编译，转换前的程序称为源代码或源程序。如果编译器没有把源代码直接转换为机器语言，一般称为源代码转换器或源码转换器。"
+   ]
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Ruby 2.4.1",
+   "language": "ruby",
+   "name": "ruby"
+  },
+  "language_info": {
+   "file_extension": ".rb",
+   "mimetype": "application/x-ruby",
+   "name": "ruby",
+   "version": "2.4.1"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 2
+}
