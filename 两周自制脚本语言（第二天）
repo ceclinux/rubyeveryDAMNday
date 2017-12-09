@@ -1,0 +1,107 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Stone语言不支持Ruby语言的正则表达式字面量"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "问： `x/ruby/3`该怎么理解呢？"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "答：`/`的含义可以通过上下文来判断。"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "通过上下文判断并不容易，实现起来也较为复杂，因此`Stone`语言就不支持这种语法了。"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "如果像`Java`一样，语句体内仅含一条语句时可以不使用括号，就会出现下面这样的歧义"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "if 0 < x - y - z"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "```java\n",
+    "if x < x - y {- z}\n",
+    "if 0 < x { - y - z }\n",
+    "```"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## dangling-else问题"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "```\n",
+    "if (x > 0)\n",
+    "  if (y > 0)\n",
+    "    return x + y;\n",
+    "else\n",
+    "  return -x;\n",
+    "```"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "这段代码的问题在于判断`else`应当对应哪一个`if`。如果语法没有对此做出明确规定，两个`if`都没问题。`Java`语言当然做了规定，在这种情况下，`else`与最近的一个`if`对应，因此不存在歧义（因此，上面代码中的缩进是不恰当）。如果在设计语言时欠考虑，就很容易出现这类`dangling-else`问题，使语言变得摸棱两可。"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "collapsed": true
+   },
+   "outputs": [],
+   "source": []
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Ruby 2.4.1",
+   "language": "ruby",
+   "name": "ruby"
+  },
+  "language_info": {
+   "file_extension": ".rb",
+   "mimetype": "application/x-ruby",
+   "name": "ruby",
+   "version": "2.4.1"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 2
+}
