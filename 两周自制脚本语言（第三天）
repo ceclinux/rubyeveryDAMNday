@@ -1,0 +1,78 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "词法分析器将程序源代码视作字符串，并把它分割为若干单词。分割后的单词并不是简单地用String对象表示，而是使用了Token对象。这种对象除了记录该单词对应的字符串，还会保存单词的类型，单词所处位置的行号等信息"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "**在词法分析后需要执行的是语法分析**。对语法分析阶段的抽象语法树构造来说，`peek`方法必不可少。语法分析阶段将一边获取单词一边构造抽象语法树，在中途发现有误时，需要退回若干个单词，重新构建语法树，这称为回溯。为了支持回溯，语言处理器必须能够取消之前的几次`read`方法的调用，并还原先前的结果。不过，如果要在实现`Lexer`类时解决这一问题，执行效率会受到影响，因此这里准备了`peek`方法。"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "`peek`方法可以事先获知之后将会取得的单词，以此避免撤销抽象语法树的构造。也就是说，当遇到分支路线时，不是先随意选取一条，在行不通时再原路返回改走另一条，而是先费一番周折，判断前路是正确，在确信没有问题是才真正继续。"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "\n",
+    "只要使用`peek`方法就能自由读取之后的单词，那还有必要使用`read`方法吗"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "答：这关系到内存的占用量。`read`方法返回的单词不必一直保留，而`peek`方法必须保留所有返回的单词，内存消耗更大"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "collapsed": true
+   },
+   "outputs": [],
+   "source": []
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": []
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "collapsed": true
+   },
+   "outputs": [],
+   "source": []
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Ruby 2.4.1",
+   "language": "ruby",
+   "name": "ruby"
+  },
+  "language_info": {
+   "file_extension": ".rb",
+   "mimetype": "application/x-ruby",
+   "name": "ruby",
+   "version": "2.4.1"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 2
+}
