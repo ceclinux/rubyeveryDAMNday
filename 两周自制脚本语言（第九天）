@@ -1,0 +1,67 @@
+{
+ "cells": [
+  {
+   "cell_type": "code",
+   "execution_count": 1,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "SyntaxError: unexpected '}', expecting keyword_end\n",
+      "    }\n",
+      "     ^\n"
+     ]
+    }
+   ],
+   "source": [
+    "class Position{\n",
+    "  x = y = 0\n",
+    "  def move(nx, ny){\n",
+    "    x = nx;\n",
+    "    y = ny;\n",
+    "    }\n",
+    "}"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "该例中，出现于`move`方法内的`x`乍看是一个局部变量，其实它是`this.x`的省略形式，表示`x`字段。这类`x`的实现比较苦难。如果将`move`方法的定义视作函数定义，`x`与`y`都属于自由变量。参数`nx`与`ny`则是约束变量。"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "**自由变量**指的是函数参数及布局变量意外的参数。"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "collapsed": true
+   },
+   "outputs": [],
+   "source": []
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Ruby 2.4.1",
+   "language": "ruby",
+   "name": "ruby"
+  },
+  "language_info": {
+   "file_extension": ".rb",
+   "mimetype": "application/x-ruby",
+   "name": "ruby",
+   "version": "2.4.1"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 2
+}
