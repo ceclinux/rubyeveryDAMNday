@@ -26,4 +26,20 @@ Rails 提供了多种安全特性来帮助我们编写安全的应用，上面�
 
 注意在 create 动作中，当 save 返回 false 时，我们用 render 代替了 redirect_to。使用 render 方法是为了把 @article 对象回传给 new 模板。这里渲染操作是在提交表单的这个请求中完成的，而 redirect_to 会告诉浏览器发起另一个请求。
 
-在 ArticlesController 中添加 @article = Article.new 是因为如果不这样做，在视图中 @article 的值就会是 nil，这样在调用 @article.errors.any? 时就会抛出错误。
+在 ArticlesCo ntroller 中添加 @article = Article.new 是因为如果不这样做，在视图中 @article 的值就会是 nil，这样在调用 @article.errors.any? 时就会抛出错误。
+
+```ruby
+class Article < ApplicationRecord
+end
+```
+
+虽然这个文件中的代码很少，但请注意`Article`类继承自`ApplicationRecord`类，而`ApplicationRecord`类继承自`ActiveRecord::Base`类。正是`ActiveRecord::Base`类为`Rails`模型提供了大量功能，包括基本的`CRUD`操作、数据验证，以及对复杂搜索的支持和关联多个模型的能力
+
+在上面的代码中，link_to 辅助方法生成“Destroy”链接的用法有点不同，其中第二个参数是具名路由（named route），还有一些选项作为其他参数。method: :delete 和 data: { confirm: 'Are you sure?' } 选项用于设置链接的 HTML5 属性，这样点击链接后 Rails 会先向用户显示一个确认对话框，然后用 delete 方法发起请求。这些操作是通过 JavaScript 脚本 rails-ujs 实现的，这个脚本在生成应用骨架时已经被自动包含在了应用的布局中（app/views/layouts/application.html.erb）。如果没有这个脚本，确认对话框就无法显示。
+
+```
+bin/rails generate model Comment commenter:string body:text article:references
+```
+
+
+
