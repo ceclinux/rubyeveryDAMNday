@@ -41,5 +41,31 @@ end
 bin/rails generate model Comment commenter:string body:text article:references
 ```
 
+上面的代码在 articles 资源中创建 comments 资源，这种方式被称为嵌套资源。这是表明文章和评论之间层级关系的另一种方式。
+
+Active Record 模式出自 Martin Fowler 写的《企业应用架构模式》一书。在 Active Record 模式中，对象中既有持久存储的数据，也有针对数据的操作。Active Record 模式把数据存取逻辑作为对象的一部分，处理对象的用户知道如何把数据写入数据库，还知道如何从数据库中读出数据。
+
+
+Single table inheritance
+
+Active Record allows inheritance by storing the name of the class in a column that by default is named “type” (can be changed by overwriting Base.inheritance_column). This means that an inheritance looking like this:
+
+class Company < ActiveRecord::Base; end
+class Firm < Company; end
+class Client < Company; end
+class PriorityClient < Client; end
+
+When you do Firm.create(name: "37signals"), this record will be saved in the companies table with type = “Firm”. You can then fetch this row again using Company.where(name: '37signals').first and it will return a Firm object.
+
+Be aware that because the type column is an attribute on the record every new subclass will instantly be marked as dirty and the type column will be included in the list of changed attributes on the record. This is different from non Single Table Inheritance(STI) classes:
+```ruby
+Company.new.changed? # => false
+Firm.new.changed?    # => true
+Firm.new.changes     # => {"type"=>["","Firm"]}
+```
+If you don't have a type column defined in your table, single-table inheritance won't be triggered. In that case, it'll work just like normal subclasses with no special magic for differentiating between them or reloading the right type with find.
+
+Note, all the attributes for all the cases are kept in the same table. Read more: www.martinfowler.com/eaaCatalog/singleTableInheritance.html
+
 
 
