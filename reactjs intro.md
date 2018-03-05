@@ -43,3 +43,23 @@ this.setState((prevState, props) => ({
   counter: prevState.counter + props.increment
 }));
 ```
+
+Returning `null` from a component’s render method does not affect the firing of the component’s lifecycle method
+
+每当根元素有不同类型，React将卸载旧树并重新构建新树。从<a>到<img>或从<Article>到<Comment>，或从<Button> 到 <div>，任何的调整都会导致全部重建。
+
+当树被卸载，旧的DOM节点将被销毁。组件实例会调用componentWillUnmount()。当构建一棵新树，新的DOM节点被插入到DOM中。组件实例将依次调用componentWillMount()和componentDidMount()。任何与旧树有关的状态都将丢弃。
+
+这个根节点下所有的组件都将会被卸载，同时他们的状态将被销毁。 例如，以下节点对比之后：
+```jsx
+<div>
+  <Counter />
+</div>
+```
+
+```jsx
+<span>
+  <Counter />
+</span>
+```
+这将会销毁旧的Counter并重装新的Counter。
