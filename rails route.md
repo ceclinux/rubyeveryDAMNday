@@ -34,3 +34,27 @@ resources :photos do
   get 'search', on: :collection
 end
 ```
+
+To add a route to the collection:
+```
+resources :photos do
+  collection do
+    get 'search'
+  end
+end
+```
+This will enable Rails to recognize paths such as /photos/search with GET, and route to the search action of PhotosController. It will also create the search_photos_url and search_photos_path route helpers.
+
+Just as with member routes, you can pass :on to a route:
+```
+resources :photos do
+  get 'search', on: :collection
+end
+```
+
+This will enable Rails to recognize paths such as /comments/new/preview with GET, and route to the preview action of CommentsController. It will also create the preview_new_comment_url and preview_new_comment_path route helpers.
+```
+resources :comments do
+  get 'preview', on: :new
+end
+```
