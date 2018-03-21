@@ -26,40 +26,6 @@ SQL用单引号(')表示字符串
 
 可以像`CHAR(10)`或者`CHAR(200)`这样，在括号中指定该列可以存储的字符串的长度（最大长度）。字符串超出最大长度的部分是无法输入到该列中的。比如`CHAR(8)`,`abc`会以`abc_____`存储。
 
-主键是可以唯一确定一行数据的列。
-
-```sql
-ALTER TABLE Product ADD COLUMN product_name_pinyin VARCHAR(100)
-```
-
-使用RDBMS时，最常见的系统结构客户端/服务器类型（C/S类型）这种结构。
-
-RDBMS也是一种服务器，它能够从保存在硬盘上的数据中读取数据并返回，还可以把数据变更为指定内容。
-
-## Data definition Language
-
-- CREATE
-- DROP
-- ALTER
-
-## Data Manipulation Language
-
-- SELECT
-- INSERT
-- UPDATE
-- DELETE
-
-## Data Control Language
-
-- COMMIT
-- ROLLBACK
-- GRANT
-- REVOKE
-
-SQL用单引号(')表示字符串
-
-可以像`CHAR(10)`或者`CHAR(200)`这样，在括号中指定该列可以存储的字符串的长度（最大长度）。字符串超出最大长度的部分是无法输入到该列中的。比如`CHAR(8)`,`abc`会以`abc_____`存储。
-
 同`CHAR`一样，`VARCHAR`也是用来指定储存字符串的列的数据类型（字符串类型），也可以通过括号内的数字来指定字符串的长度（最大长度）。但该类型的列是以可变长字符串的形式来保存字符串的。
 
 主键是可以唯一确定一行数据的列。
@@ -143,3 +109,57 @@ SELECT子句中只能存在以下三种元素。
 - `GROUP BY`子句中指定的列名字
 
 `GROUP_BY`的显示结果是无序的
+
+子句的书写顺序
+`SELECT -> FROM -> WHERE -> GROUP BY -> HAVING -> ORDER BY`
+
+`ORDER BY`中也可以使用聚合函数
+```sql
+SELECT product_type, COUNT(*)
+FROM Product
+GROUP BY product_type
+ORDER BY COUNT(*)
+```
+
+事务是对表中数据进行更新的单位。事务就是需要在同一个处理单元中执行的一系列更新处理的集合。
+
+`COMMIT`是提交事务包含的全部更新处理的结束命令，相当于文件处理中的覆盖保存。一旦提交，就无法回复到事务开始前的状态了。因此，在提交之前一定要确定是否真的需要进行这些更新。
+
+实际上，几乎所有的数据库产品的事务都无需开始指令。这是因为大部分情况下，事务在数据库连接建立时就已经悄悄开始了，并不需要用户再明确发出开始指令。
+
+## 原子性
+
+原子性是指在事务结束的时候，其中所包含的更新处理要么全部执行，要么完全不执行，也就是要么占有一切要么一无所有。
+
+## 一致性
+
+一致性指的是事务中包含的处理要满足数据库提前设置的约束，如主键约束或者`NOT NULL`约束等。例如，设置了`NOT NULL`约束的列是不能更新为`NULL`的，试图插入主键约束的记录就会出错，无法执行，对事务来说，这些不合法的SQL会被回滚。
+
+## 隔离性
+
+隔离性指的是保证不同事务之间互补干扰的特性。该特性保证了事务之间互不相干的特性。此外，在某个事务中进行的更改，在该事务结束之前，对其他事务而言是不可见的。
+
+## 持久性
+指的是事务结束后，`DBMS`能够保证该时间点的数据状态会被保存的特性。即使由于系统故障导致数据丢失，数据库也一定能通过某种手段进行修复。
+
+标量子查询则有一个特殊的限制，那就是必须而且只能返回1行1列的结果，也就是返回表中某一行的某一列的值
+
+```sql
+SELECT product_id, product_name, sale_price
+FROM Product
+WHERE sale_price > (SELECT AVG(sale_price) FROM Product)
+```
+
+标量子查询在能够使用常数或者列名的地方，无论是`SELECT`语句、`GROUP BY`语句、`HAVING`子句，还是`ORDER BY`子句，几乎所有的地方都可以使用。
+
+关联子查询
+
+```sql
+SELECT product_type, product_name, sale_price
+FROM Product AS P1
+WHERE sale_price > (SELECT AVG(sale_price) FROM Product AS P2 WHERE P1.product_type = P2.product_type) GROUP BY product_type);
+```
+
+关联子查询实际只能返回1行结果。这也是关联子查询不出错的关键。
+
+不能把`P1.product_type = P2.product_type`放到外部，因为“内部可以看到外部，外部看不到内部”
