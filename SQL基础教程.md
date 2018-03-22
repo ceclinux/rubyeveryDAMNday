@@ -163,3 +163,62 @@ WHERE sale_price > (SELECT AVG(sale_price) FROM Product AS P2 WHERE P1.product_t
 关联子查询实际只能返回1行结果。这也是关联子查询不出错的关键。
 
 不能把`P1.product_type = P2.product_type`放到外部，因为“内部可以看到外部，外部看不到内部”
+
+使用视图的时候不会将数据存储到设备之中，而且也不会将数据保存到其他任何地方。实际上视图保存的是`SELECT`语句。我们从视图中读取数据时，视图会在内部执行该`SELECT`语句并创建出一张临时表。
+
+视图的有点有两点
+
+- 视图无需保存数据
+- 视图的数据会随着原表的变化自动更新
+
+创建视图
+
+```sql
+create view ProductSum (product_type, cnt_product)
+as
+select product_type, count(*)
+from product
+group by product_type
+```
+
+这样我们就在数据库中创建出了一副名为`ProductSum`（商品合计）的视图。请大家一定不要省略第二行的关键字`AS`。这里的`AS`与定义的名时使用的`AS`并不相同，如果省略就会发生错误。
+
+```sql
+select product_type, cnt_product
+from ProductSum
+```
+
+视图就是保存好的`SELECT`语句。
+
+多重视图会降低`SQL`的性能。
+
+## 视图的限制
+
+- 定义视图时不能使用`ORDER BY`子句
+
+为什么呢，这是因为视图和表一样，数据行都是没有顺序的。实际上，有些`DBMS`在定义视图的语句是可以使用`ORDER BY`子句的，但这并不是通用的做法。
+
+- 视图更新
+
+视图归根结底还是从表派生出来的，因此，如果原表可以更新，那么视图中的数据也可以更新。反之亦然，如果视图发生了改变，而原表没有进行相应更新的话，就无法保证数据的一致性了。
+
+视图和表需要同时进行更新，因此通过汇总得到的视图无法进行更新。
+
+```sql
+create view ProductJim (product_id, product_name, product_type, sale_price, prucehase_price, regist_date)
+as 
+select *
+from Product
+where product_type = '办公用品'
+```
+
+上面的视图既没有聚合又没有结合的`SELECT`语句，可以使用如下SQL添加数据行。
+
+```sql
+insert into ProductJim values ('0009', '印章', '办公用品', 95, 10, '2009-11-30')
+```
+
+删除视图
+```sql
+drop view ProductJim
+```
