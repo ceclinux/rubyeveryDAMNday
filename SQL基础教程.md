@@ -222,3 +222,50 @@ insert into ProductJim values ('0009', '印章', '办公用品', 95, 10, '2009-1
 ```sql
 drop view ProductJim
 ```
+
+```sql
+insert into ProductIns (product_id, product_name, product_type, sale_price, purchase_price, regist_date) values
+('0001','T恤衫', '衣服', 1000, 500, '2009-09-20');
+```
+
+将列名和值用逗号分开，风别括在（）内，这种形式称为**清单**。以上代码包含如下两个清单
+
+```sql
+(product_id, product_name, product_type, sale_price, purchase_price, regist_date)
+```
+
+```sql
+('0001','T恤衫', '衣服', 1000, 500, '2009-09-20')
+```
+
+对表进行全列`INSERT`时，可以省略表名后的列清单。这时`VALUES`子句的值会默认按照从左到右的顺序付给每一列。
+
+```sql
+INSERT INTO ProductIns VALUES ('0005', '高压锅', '厨房用具',6800,5000, '2009-01-15')
+```
+
+```sql
+INSERT INTO ProductIns (product_id, product_name, product_type, sale_price, purchase_price, regist_date) values
+('0007', '擦菜板', '厨房用具', DEFAULT,790, '2009-04-28')
+``` 
+
+插入默认值时也可以不使用`DEFAULT`关键字，只要在列清单和`VALUES`中省略设定了默认值的列就好了，我们可以省略`sale_price`列
+
+如果省略了没有默认值的列，该列的值就会被设定为`NULL`。因此，如果省略的是设置了`NOT NULL`的列，`INSERT`语句就会出错。
+
+
+## insert...select语句
+```sql
+insert into ProductCopy (product_id, prodcut_name, product_type, sale_price, purchase_price, regist_date)
+select product_id, product_name, product_type, sale_price, purchase_price, regist_date
+from Product
+```
+
+`DELETE`语句删除的对象并不是表或者列，而是记录。
+
+```sql
+DELETE FROM Product
+where sale_price >= 4000;
+```
+
+与`DELETE`不同的是，`TRUNCATE`只能删除表中的所有数据，而不能通过`WHERE`来执行条件删除部分数据。所以要比`DELETE`快的多。
