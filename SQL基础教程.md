@@ -269,3 +269,52 @@ where sale_price >= 4000;
 ```
 
 与`DELETE`不同的是，`TRUNCATE`只能删除表中的所有数据，而不能通过`WHERE`来执行条件删除部分数据。所以要比`DELETE`快的多。
+
+```sql
+update Product
+set regist_date = '2009-10-10'
+```
+
+将厨房用具的销售单价提高十倍
+```sql
+update Product
+set sale_price = sale_price * 10
+where product_type = '厨房用具'
+```
+
+多列更新
+```sql
+update Product
+set sale_price = sale_price * 10,
+purchase_price = purchase_price / 2
+where product_type = '厨房用具'
+```
+
+可以使用`||`对字符串进行拼接（`pg上`），比如说`str || str2 || str3`
+
+谓词就是转换值为真值的函数。
+
+以`ddd`开头的所有字符串
+```sql
+select *
+from SampleLike
+where strcol like 'ddd%'
+```
+
+```sql
+select product_name, sale_price
+from Product
+where sale_price between 100 and 1000;
+```
+
+`BETWEEN`的特点是结果中会包含`100`和`1000`这两个临界值。
+
+为了选取某些值为`NULL`的列的数据，不能使用`=`，而只能使用特定的谓词`IS NULL`。
+
+```sql
+select product_name, purchase_price
+from Product
+where purchase_price is NULL;
+```
+
+同样，想要选取`NULL`以外的数据时，需要使用`IS NOT NULL`。
