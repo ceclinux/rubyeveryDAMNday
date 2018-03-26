@@ -318,3 +318,66 @@ where purchase_price is NULL;
 ```
 
 同样，想要选取`NULL`以外的数据时，需要使用`IS NOT NULL`。
+
+`IN`谓词，`OR`的简便用法
+
+```sql
+select product_name, purchase_price
+from Product
+where purchase_price in (320, 500, 5000)
+```
+
+但需要注意的是，在使用`IN`和`NOT IN`时是无法选取出`NULL`数据的。
+
+`IN`谓词（`NOT IN`谓词）具有其他谓词没有的用法，那就是可以使用子查询作为参数。我们可以说，能够将视图作为`IN`的参数。
+
+```sql
+select product_name, sale_price
+from Product
+where product_id in (select product_id from ShopProduct where shop_id = '000C')
+```
+
+```sql
+select *
+from Product as P
+where exists (select * from ShopProduct as SP where SP.shop_id = '000C' and SP.product_id = P.product_id)
+```
+
+由于`EXIST`只关心列记录是否存在，因此返回那些列都没关系。
+
+`CASE`表达式是在区分情况时使用的，这种情况的区分在编程中通常称为`(条件)分支`。
+
+```sql
+select product_name,
+case when product_type = '衣服'
+then 'A: ' || product_type
+when product_type = '办公用品'
+then 'B: ' || product_type
+when product_type = '厨房用具'
+then 'C: ' || product_type
+else null
+end as abc_product_type
+from Product;
+```
+
+`ELSE`子句也可以省略不写，这时会被默认为`ELSE NULL`。
+
+```sql
+select sum(case when product_type = '衣服' then sale_price else 0 end) as sum_price_clothes,
+sum(case when product_type = '厨房用具' 
+	then sale_price else 0 end) as sum_price_kitchen,
+sum(case when product_type = '办公用品'
+	then sale_price else 0 end) as sum_price_office
+from Product
+```
+
+`NOT IN`的参数中包含`NULL`时结果通常为空，也就是无法选取出任何记录。
+
+```sql
+select sum(case when product_type = '衣服' then sale_price else 0 end) as sum_price_clothes,
+sum(case when product_type = '厨房用具' 
+	then sale_price else 0 end) as sum_price_kitchen,
+sum(case when product_type = '办公用品'
+	then sale_price else 0 end) as sum_price_office
+from Product
+```
