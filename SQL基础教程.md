@@ -381,3 +381,82 @@ sum(case when product_type = '办公用品'
 	then sale_price else 0 end) as sum_price_office
 from Product
 ```
+
+```sql
+select product_id, product_name
+from product
+
+union
+select product_id, product_name
+from Product2
+```
+
+`UNION`集合运算符会删去重复的事务
+
+## 集合运算的注意事项
+
+1. 作为运算对象的记录的列数必须相同
+2. 作为运算对象的记录中的列的类型必须一致
+3. 可以使用任何`SELECT`语句，但`ORDER BY`子句只能在最后使用一次
+
+```sql
+select product_id, product_name
+from Product
+where product_type = '厨房用具'
+union
+select product_id, product_name
+from Product2
+where product_type = '厨房用具'
+order by product_id
+```
+
+只需在`UNION`之外的集合添加`ALL`关键字，就可以保留重复行。
+
+```sql
+select SP.shop_id, SP.shop_name, SP.product_id, P.product_name, P.sale_price
+from ShopProduct as SP INNER JOIN Product AS P
+ON SP.product_id = P.product_id
+```
+
+内联结要点（`ON`子句）
+```sql
+ON SP.product_id = P.product_id
+```
+
+进行内联结的时候必须使用`ON`子句，并且要书写在`FROM`和`WHERE`之间。
+
+对于外联结来说，只要数据存在于某一张表中，就能够读取出来。
+
+外联结还有一点非常重要，那就是要把哪张表作为主表。最终的结果中会包含主表内所有的数据。指定主表的关键字是`LEFT`或`RIGHT`。
+
+```sql
+select SP.shop_id, SP.shop_name, SP.product_id, P.product_name, P.sale_price, IP.inventory_quantity
+from ShopProduct AS SP INNER JOIN Product as P
+on SP.product_id = P.Product_id
+INNER JOIN InventoryProduct as IP
+ON SP.product_id = IP.product_id
+WHERE IP.inventory_id = 'P001'
+```
+
+## CROSS JOIN
+
+```sql
+select SP.shop_id, SP.shop_name, SP.product_id, P.product_name
+FROM ShopProduct AS SP CROSS JOIN Product AS P;
+```
+
+因为`ShopProduct`表存在`13`条记录，`Product`表存在`8`条记录，所以结果中出现了`8 * 13 = 104`条记录。
+
+
+除法运算是存在的。集合运算中的除法通常称为关系出。关系是数学领域中对标或者视图的陈伟，但是没有定义像`UNION`或者`EXCEPT`这样的运算符。
+
+```sql
+select distinct emp
+from EmpSkills ES1
+where not exists
+(select skill from Skills
+except
+select skill
+from EmpSkills ES2
+where ES1.emp = ES2.emp) 
+```
