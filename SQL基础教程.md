@@ -460,3 +460,92 @@ select skill
 from EmpSkills ES2
 where ES1.emp = ES2.emp) 
 ```
+
+窗口函数也称为`OLAP`函数。为了让大家快速形成直观印象，才起了这样一个容易理解的名称。
+
+`OLAP`是`Online Analytical Processing`的简称，意思是对数据库进行实时分析处理。例如，市场分析、创建财务报表、创建计划等日常性上午工作。
+
+窗口函数就是为了实现`OLAP`而添加的标准`SQL`功能。
+
+```sql
+select product_name, product_type, sale_price,
+rank() over (partition by product_type order by sale_price) as ranking
+from Product
+```
+
+`PARTITION BY`能够设定排序的对象范围，本例中个，为了按照商品种类进行排序，我们指定了`product_type`。
+
+`ORDER BY`能够指定哪一列、何种顺序进行排序。为了按照销售单价的升序进行排列，我们指定了`sale_price`。此外，窗口函数中的`ORDER BY`与`SELECT`函数语句末尾的`ORDER BY`一样，可以通过关键字`ASC/DESC`来指定升序和降序。
+
+窗口函数兼具分组和排序两种功能。
+
+通过`PARTITION BY`分组后的记录集合称为“窗口”。
+
+上述如果不用`PARTITION BY`会对所有进行排序。
+
+窗口函数只能在`SELECT`中使用。
+
+所有的聚合函数都能用作窗口函数，其语法和专用窗口函数完全相同。
+
+```sql
+select product_name, product_type, sale_price,
+sum(sale_price) over (order by product_id) as current_sum
+from Product
+```
+
+计算合计值的逻辑就像金字塔堆积那样，一行一行逐渐添加计算对象。
+
+窗口函数就是将表以窗口为单位进行分割，并在其中进行排序的函数。其实其中还包含在窗口中指定更加详细的汇总返回的备选功能，该备选功能中的汇总范围称为框架。
+
+```sql
+select product_name, product_type, sale_price,
+avg(sale_price) over (order by product_id rows 2 preceding) as moving_avg
+from Product
+```
+
+这里我们使用了`ROWS`和`PRECEDING`两个关键字，将框架指定为“截止到之前~行”。因此“`ROWS 2 PRECEDING`”就是将框架指定为“截止到之前两行”，也就是将汇总对象的记录限定为如下的“最靠近的3行”。
+
+这样的统计方法为移动平均。由于这种方法在希望实时把握“最近状态”时非常方便，因此常常会应用在对故事趋势的实时追踪当中。
+
+当前记录的前后行
+
+```sql
+select product_name, product_type, sale_price,
+avg(sale_price) over (order by product_id rows between 1 preceding and 1 following) as moving_avg
+from Product
+```
+
+`OVER`子句中的`ORDER BY`只是用来决定窗口函数按照什么样的顺序进行计算的，对结果的排列顺序并没有影响。
+
+```sql
+select product_name, product_type, sale_price,
+rank() over (order by sale_price) as ranking
+from Product
+order by ranking desc
+```
+
+`GROUPING`运算符包含以下三种
+
+- `ROLLUP`
+- `CUBE`
+- `GROUPING SETS`
+
+```sql
+select product_type, SUM(sale_price) as sum_price
+from Product
+group by ROLLUP(product_type)
+```
+
+`ROLLUP`可以得出合计和小计。
+
+为了避免混淆，`SQL`提供了一个用来判断超级分组记录的`NULL`的特定函数，`GROUPING`函数。该函数在其参数列的只为超级分组记录所产生的`NULL`的值时返回1，其他情况返回0。
+
+```sql
+select grouping(product_type) as product_type,grouping(regist_date) as regist_date, SUM(sale_price) as sum_price
+from Product
+group by ROLLUP(product_type, regist_date)
+```
+
+所谓`CUBE`，就是将`GROUP BY`子句中聚合键的“所有可能组合”的汇总结果集中到一个结果中。因此，组合的个数就是`2^n`。本列中的组合键有`2`个，所有组合个数就是4。
+
+之前的`CUBE`的结果就是根据聚合键的所有可能的组合计算而来的。如果希望从中选取出将“商品种类”和“登记日期”各自作为聚合键的结果，或者不想的得到“合计记录和使用2个聚合键的记录”时，可以使用`GROUPING SETS`。
