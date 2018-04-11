@@ -63,3 +63,33 @@ create role royalty inherit
 ```
 请注意术语`INHERIT`的用法。它表示组角色`royalty`的任何一个成员角色都将自动继承其除“超级用户权限”外的所有权限。`Postgres`不允许超级用户权限通过继承的方式传递。
 
+有些权限是无法被继承的，例如前面提到过的`SUPERUSER`超级用户权限就无法被继承。然而成员角色可以通过`SET ROLE`命令来实现“冒名顶替”其父角色的身份，从而获得其父角色所拥有的`SUPERUSER`权限，当然这种冒名顶替的状态是有期限的，仅限于当前会话存续期间有效。例如，`royalty`组角色的成员角色可以通过执行以下语句来实现上述“冒名顶替”的目的。
+
+```sql
+set role royalty
+```
+
+1. 首先，只有具备`SUPERUSER`权限的用户才可以执行`SET SESSION AUTHORIZATION`，而`SET ROLE`是任何一个成员角色都可以执行的。其次，`SET SESSION AUTHORIZATION`能够使当前角色“扮演”系统中任何一个其他角色，即当前角色可以拥有其他目标角色的身份和相应权限，而不像`SET ROLE`那样仅仅限于“扮演”其父角色。
+
+2. 从系统内部实现机制来讲，每个会话会有两个表示当前用户身份的环境变量：一个是`session_user`，即当前用户登录时带的原始身份，一个是`current_user`，即当前用户所扮演的身份，默认情况下两者是一致的。`SET SESSION AUTHORIZATION`命令会将`current_USER`和`session_user`都替换为所“扮演”角色的相应身份ID，而`SET ROLE`命令只会修改`current_user`，而保持`session_user`不变。这意味者`SET SESSION AUTHORIZATION`命令会对后续的`SET ROLE`命令产生影响，因为原始身份`session_user`也发生了变化；而`SET ROLE`命令不会对后续的`SET ROLE`命令产生影响，因为原始身份`session_user`未发生变化。
+
+3. 假设某会话的原始身份是`ROLE_A`，即`current_user`和`session_user`都是`ROLE_A`，然后成功执行了`SET SESSION AUTHORIZATION ROLE_B`命令，那么`current_user`和`session_user`都被修改成了`ROLE_B`，之后如果在此会话上再执行`SET ROLE`命令的话，基础身份就是`ROLE_B`了，也就是说此时`SET ROLE`只能设定为`ROLE_B`所归属的某个组角色。但由于`SET ROLE`并不修改`session_user`标识，因此在执行过`SET ROLE`之后再执行`SET ROLE`的话，后一个`SET ROLE`操作的基础身份是不变的，还是当前的`session_user`角色。
+
+## 创建`database`
+
+最基本的创建数据库的`SQL`语句是：
+
+```sql
+
+CREATE DATABASE mydb;
+```
+
+该命令会以`template1`库为模板生成一份副本作为新`database`，每个`database`都会有一个属主，这个新库的属主就是执行此`SQL`命令的角色。任何一个拥有`CREATEDB`权限的角色都能够创建新的`database`。
+
+创建新`database`时，`PostgreSQL`会基于模板数据库制作一份副本，其中会包含所有的数据库设置和数据文件。
+
+基于某个模板创建数据库的基本语法如下
+
+```sql
+CREAtE DATABASE my_db TEMPLATE my_template_db
+```
