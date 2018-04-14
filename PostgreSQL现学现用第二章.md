@@ -93,3 +93,86 @@ CREATE DATABASE mydb;
 ```sql
 CREAtE DATABASE my_db TEMPLATE my_template_db
 ```
+
+你可以用热河一个现存的`database`作为创建新数据库的模板。此外，你还可以将某个现存的数据库标记为模板数据库，对于这种模板的数据库，`PostgreSQL`会禁止对其进行编辑或者删除。任何一个具备`CREATEDB`权限的角色都可以使用这种模板数据库。以超级用户身份运行以下`SQL`可使任何数据库成为模板数据库。
+
+```sql
+UPDATE pg_database SET datistemplate = TRUE WHERE datname = 'mydb'
+```
+
+如果你希望修改或者删除被标记为模板的数据库，请先将上述语句中的`datistemplate`字段值改为`FALSE`，这样就可以放开编辑限制。如果你还希望将此数据库作为模板的话，修改完记得将此字段改回来。
+
+`schema`可以对`database`中的对象进行逻辑分组管理。如果你的服务器上有一堆的`database`，那么管理起来会很麻烦，可以考虑通过`schema`来对数据进行分类并全部存放到一个`database`中。`schema`中的对象名不允许重复，但一个`database`的不同`schema`中的对象是可以重名的。如果你将数据库中的所有表都塞到`public schema`中（建数据库默认创建的`schema`），迟早会遇到对象重名的问题。例如：假设要为一家航空公司设计`IT`系统，那么可以将飞机信息表及其日常维护信息表放到一个叫做`plane`的`schema`中，把所有机组人员及其人事放到人事`schema`中，再创建一个单独`schema`用于记录乘客相关信息，这样就把所有信息分门别类隔离开了。
+
+假设你的工作是开发一套“宠物狗信息管理系统”并将该在线系统租赁给宠物店SPA店使用。每个宠物店的数据必须完全隔离。为了达到这个要求，你可以为每家客户都简历一个单独的`schema`，每个`schema`中建立相同的一张`dogs`表。最后为每个`schema`创建一个与之同名的角色，这样就可以实现各自独自管理。
+
+What is the search path?
+
+Per documentation:
+
+    [...] tables are often referred to by unqualified names, which consist of just the table name. The system determines which table is meant by following a search path, which is a list of schemas to look in.
+
+Bold emphasis mine. This explains identifier resolution, and the “current schema” is, per documentation:
+
+    The first schema named in the search path is called the current schema. Aside from being the first schema searched, it is also the schema in which new tables will be created if the CREATE TABLE command does not specify a schema name.
+
+Bold emphasis mine. The system schemas pg_temp (schema for temporary objects of the current session) and pg_catalog are automatically part of the search path and searched first, in this order. Per documentation:
+
+    pg_catalog is always effectively part of the search path. If it is not named explicitly in the path then it is implicitly searched before searching the path's schemas. This ensures that built-in names will always be findable. However, you can explicitly place pg_catalog at the end of your search path if you prefer to have user-defined names override built-in names.
+
+Bold emphasis as per original. And pg_temp comes before that, unless it's put into a different position.
+How to set it?
+
+You have various options to actually set the runtime variable search_path.
+
+    Set a cluster-wide default for all roles in all databases in postgresql.conf (and reload). Careful with that!
+
+    search_path = 'blarg,public'
+
+    The shipped default for this setting is:
+
+    search_path = "$user",public
+
+        The first element specifies that a schema with the same name as the current user is to be searched. If no such schema exists, the entry is ignored.
+
+    Set it as default for one database:
+
+    ALTER DATABASE test SET search_path = blarg,public;
+
+    Set it as default for the role you connect with (effective cluster-wide):
+
+    ALTER ROLE foo SET search_path = blarg,public;
+
+    Or even (often best!) as default for the role only in a given database:
+
+    ALTER ROLE foo IN DATABASE test SET search_path = blarg,public;
+
+    Write the command at the top of your script (Or execute it at any point in your session:
+
+    SET search_path = blarg,public;
+
+    Set a specific search_path for the scope of a function (to be safe from malicious users with sufficient privileges). Read about Writing SECURITY DEFINER Functions Safely in the manual.
+
+CREATE FUNCTION foo() RETURNS void AS
+$func$
+BEGIN
+   -- do stuff
+END
+$func$ LANGUAGE plpgsql SECURITY DEFINER
+       SET search_path=blarg,public,pg_temp;
+
+Higher number in my list trumps lower number.
+The manual has even more ways, like setting environment variables or using command-line options.
+
+To see the current setting:
+
+SHOW search_path;
+
+To reset it:
+
+RESET search_path;
+
+Per documentation:
+
+    The default value is defined as the value that the parameter would have had, if no SET had ever been issued for it in the current session.
+
