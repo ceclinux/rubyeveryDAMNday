@@ -176,3 +176,44 @@ Per documentation:
 
     The default value is defined as the value that the parameter would have had, if no SET had ever been issued for it in the current session.
 
+1. `postgress`在安装阶段会默认创建一个超级用户角色以及一个`database`，两者的名称都是`postgress`，以`postgress`身份登录服务器
+
+2. 在创建你自己首个`database`前，需要先建一个角色作为此`database`的所有者，所有者可以登录该库
+
+```sql
+CREATE ROLE mydb_admin LOGIN PASSWORD 'somthing'
+```
+
+3. 创建`database`并设定其拥有者
+
+```sql
+CREATE DATABASE mydb WITH owner = mydb_admin
+```
+
+然后就可以用`mydb_admin`身份登录并创建`schema`和表
+
+`GRANT`命令可以将权限授予他人。基本用法如下
+
+```sql
+GRANT some_privilege to some_rolue
+```
+
+请**牢记**几条关于`GRANT`的使用原则
+
+1. 只有权限的拥有着才能授权予给别人，并且拥有着自身还得有`GRANT`操作的权限。这一点是不言而喻的，因为自己没有的东西当然给不了别人。
+
+2. 有写权限只有对象的所有者才能拥有，任何情况下都不能授予别人。这类权限包括`DROP`和`ALTER`。
+
+3. 对象的所有者天然拥有此对象的所有权限，不需要再次授予。
+
+4. 授权时可以加上`WITH GRANT`子句，这意味着被授权者可以将得到的权限再次授予别人。
+
+```sql
+grant all on all tables in schema public to mydb_admin with grant option;
+```
+
+假设我们希望对所有数据库用户都授予某`schema`中所有函数的和表的`EXECUTE`和`SELECT`权限，我们可以这样定义
+
+```sql
+ALTER DEFAULT PRIVILEGES IN SCHEMA my_schema GRANT ALL ON TABLES TO `mydb_amin` WITH GRANT OPTION
+```
