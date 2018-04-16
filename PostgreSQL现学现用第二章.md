@@ -217,3 +217,38 @@ grant all on all tables in schema public to mydb_admin with grant option;
 ```sql
 ALTER DEFAULT PRIVILEGES IN SCHEMA my_schema GRANT ALL ON TABLES TO `mydb_amin` WITH GRANT OPTION
 ```
+
+使用`pg_dump`进行有选择性的备份，使用`pg_dumpall`进行全库备份。
+
+PostgreSQL支持以下两种数据恢复方法
+
+1. 使用`psgl`来恢复`pg_dump`或者`pg_dumpall`工具生成的`SQL`文本格式的数据备份
+2. 使用`pg_restore`工具来恢复由`pg_dump`工具生成的自定义压缩格式。
+
+`PostgreSQL`使用“表空间”这一概念来将逻辑存储空间映射到磁盘上的物理储存空间。`PostgreSQL`在安装阶段会自动生成连个表空间：一个是`pg_default`，用于存储所有的用户级数据；另一个是`pg_global`，用于存储所有的系统级数据。这两个表空间就位于默认的数据文件夹下。你可以不受限地创建表空间并将其物理存储位置设定到任何以快物理磁盘上。你也可以为`database`设定默认表空间，这样该`databse`中创建的任何新对象都会存储到此表空间上。你可以将现存的数据库对象迁移到新的表空间中。
+
+创建表空间需要先为其去一个逻辑名称并指定某个物理文件夹作为其储存位置，注意要确定`postgress`操作系统账户对此文件夹要有完全的访问权限。
+
+```sql
+CREATE TABLESPACE secondary LOCATION 'C:/pgdata'
+```
+
+你可以将数据库中的对象在表空间之间随意迁移。如果希望将一个`database`的所有对象都移动到另一个表空间中，可以执行以下命令
+
+```sql
+ALTER TABLESPACE mydb SET TABLESPACE secondary;
+```
+
+如果只希望移动一张表，命令如下:
+```sql
+ALTER  TABLE mytable SET TABLESPACE secondary;
+```
+
+将`pg_default`默认表空间的所有对象迁移到`secondary`空间，所需的命令行如下
+
+```sql
+ALTER TABLESPACE pg_default MOVE ALL TO secondary;
+```
+
+```sql
+
