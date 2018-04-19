@@ -55,3 +55,57 @@ select array[2001, 2002,2003] as year;
 |year|
 |"{2001,2002,2003}"|
 ```
+
+你可以把一个直接以字符串格式书写的数组转换成一个真正的数组
+```sql
+select '{Alex, Sonia}'::text[] as name, '{43, 40}'::smallint[] as age
+
+|name|age|
+|{alex, Snia}|{43,40}|
+```
+
+```sql
+select string_to_array('ca.ma.tx', '.') as estados
+
+|estados|
+|{ca,ma,tx}|
+```
+
+```sql
+select (ARRAY[2001, 2002, 2003])[1] as yrs
+
+|yrs|
+|2001|
+```
+
+```sql
+select (ARRAY[2001, 2002, 2003])[1] || ARRAY[2] as yrs
+
+|yrs|
+|"{2001,2}"|
+```
+
+```sql
+select unnest('{XOX, OXO, XOX}'::char(3)[]) as tic_tac_toe
+
+|tic_tac_toe|
+|XOX|
+|OXO|
+|XOX|
+```
+
+PostgreSQL对离散区别和连续区间是区别对待的。整数类型或者日期类型的区间是离散区间，因为区间的每一个值都是可以被枚举出来的。数字全歼或者时间戳区间是一个连续区间，因为区间内的值无限多。
+
+```sql
+select '[2013-01-05, 2018-08-13]'::daterange;
+select '([2013-01-05, 2018-08-13]'::daterange;
+-- 大于0小于等于正无穷的区间
+select '(0,)'::int8range;
+select '(2013-01-05 10:00, 2013-08-13 14:00)'::tsrange;
+```
+
+你可以定义一个员工的服务年限，而不需要用起始时间和结束时间两个字段表示
+```sql
+create table employment (id serial primary key, employee varchar(20), period daterange);
+insert into employment (employee, period) values ('Alex', '[2012-04-24, infinity)'::daterange)
+```
