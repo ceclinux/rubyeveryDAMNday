@@ -109,3 +109,76 @@ select '(2013-01-05 10:00, 2013-08-13 14:00)'::tsrange;
 create table employment (id serial primary key, employee varchar(20), period daterange);
 insert into employment (employee, period) values ('Alex', '[2012-04-24, infinity)'::daterange)
 ```
+
+`string_agg`: 	input values concatenated into a string, separated by delimiter
+
+重叠运算符`&&`的作用就是判定两个区间是否有重叠部分，如果有则返回`true`，否则返回`false`。
+```sql
+select e1.employee, string_agg(distinct e2.employee, ', ' order by e2.employee) as colleagues
+from employment as e1 inner join employment as e2
+on e1.period && e2.period
+where e1.employee <> e2.employee
+group by e1.employee
+
+|employee|colleagues|
+|Alex|Leo, Regiona, Sonia|
+|Leo|Alex, Regiona|
+|Regiona|Alex, Leo|
+|Sonia|Alex|
+```
+
+对于包含关系运算符`@>`来说，第一个实参是区间
+
+```sql
+select employee from employment where period @> CURRENT_DATE GROUP BY employee
+
+|employee|
+|alex|
+```
+
+```sql
+insert into families_j (profile) values (
+	'{"name": "Gomez", "members": [
+	{"member": {"relation": "padre", "name": "Alex"}},
+	{"member": {"relation": "madre", "name": "Sonia"}},
+	{"member": {"relation": "hijo", "name": "Brandom"}},
+	{"member": {"relation": "hija", "name": "Azaleah"}},]}'
+)
+```
+
+```sql
+select json_extract_path_text(profile, 'name') as family, json_extract_path_text(json_array_elements(json_extract_path(profile, 'members')), 'member', 'name') as member
+from families_j
+
+|family text|memeber text|
+|Gomez|Alex|
+|Gomez|Sonia|
+|Gomez|Brandom|
+|Gomez|Azaleah|
+```
+
+`postgresql`的数组下标是从1开始
+
+```sql
+select row_to_json(f) as x
+from (select id, profile ->> 'name' as name from families_j) as f
+
+{
+    "id": 1,
+    "name": "Gomez"
+}
+```
+
+如果要将`families`表中的所有记录行整理打包一个`JSON`
+
+```sql
+select row_to_json(f) from families_j as f
+```
+
+`jsonb`与`json`数据类型的区别如下所示
+
+1. `json`是以原始文本储存的，而`jsonb`存储的是原始文本解析以后生成的二进制数据结构，该二进制结构中不再保存原始文本中的空格，存储下来的数字的形式也发生一定的变化，并且对其内部记录属性值进行了排序。
+
+2. `jsonb`不允许其内部记录的值重复，如果出现重复则自动选择一条，其余的重复记录会被丢弃。但`json`类型中记录键值重复是允许的。
+
+3. `jsonb`的性能远好于`json`。因为`jsonb`类型在处理过程中不需要再进行文本解析。
