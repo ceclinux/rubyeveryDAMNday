@@ -182,3 +182,107 @@ select row_to_json(f) from families_j as f
 2. `jsonb`不允许其内部记录的值重复，如果出现重复则自动选择一条，其余的重复记录会被丢弃。但`json`类型中记录键值重复是允许的。
 
 3. `jsonb`的性能远好于`json`。因为`jsonb`类型在处理过程中不需要再进行文本解析。
+
+```sql
+create table families_b (id serial primary key, profile jsonb)
+```
+
+```sql
+
+select profile as j from families_j where id = 1
+
+|j|
+{
+    "name": "Gomez",
+    "members": [
+        {
+            "member": {
+                "relation": "padre",
+                "name": "Alex"
+            }
+        },
+        {
+            "member": {
+                "relation": "madre",
+                "name": "Sonia"
+            }
+        },
+        {
+            "member": {
+                "relation": "hijo",
+                "name": "Brandom"
+            }
+        },
+        {
+            "member": {
+                "relation": "hija",
+                "name": "Azaleah"
+            }
+        }
+    ]
+}
+```
+
+
+1. 可以看出，`jsonb`类型的输出是对输入的内容进行了重新格式化并删掉了输入时文本中的空格，此外`relation`和`name`这两个属性字段的显示顺序与输入时的顺序下相比发生了翻转。
+
+2. json类型的输出保持了输入时的原样，包括原文中的空格以及属性字段的顺序。
+
+jsonb与json的处理函数一一对应，但函数名略有不同；`jsonb`支持的运算符集合是`json`支持的运算符集合的超集。
+
+在往一个`xml`类型的列中插入数据时，`Postgresql`会自动判定并确保只有格式合法的`XML`才会创建成功。`text`类型中也可以存入一段`XML`文本，但是存入时不会进行格式合法性判断，这一点是`text`与`xml`类型的区别。不过请注意，即使`XML`文本的内容中附带了`DTD`或者`XSD`的格式描述，`PostgreSQL`也不会按照这些格式要求来对`XML`格式进行验证。
+
+```sql
+insert into families(profile)
+values('<family name="Gomez">
+	  <member><relation>padre</relation><name>Alex</name></member>
+	  <member><relation>madre</relation><name>Sonia</name></member>
+	   <member><relation>hijo</relation><name>Brandom</name></member>
+	   <member><relation>hija</relation><name>Azaleah</name></member>
+	   </family>'
+	  )
+```
+
+```sql
+alter table families add constraint chk_has_relation
+check (xpath_exists('/family/member/relation', profile))
+```
+
+该约束要求输入的`XML`数据中的`family`节点下都有一个`relation`节点。'/family/member/relation'是Xpath语法，Xpath是一种能够在`xml`树状结构中定位到指定元素的语法。
+
+如果插入
+
+```sql
+insert into families (profile) values ('<family name="HsuObe"></family>');
+```
+
+会看到报错信息。
+
+```sql
+select family, (xpath('/member/relation/text()', f))[1]::text as relation,
+(xpath('/member/name/text()', f))[1]::text as mem_name
+from (select (xpath('/family/@name', profile))[1]::text as family, unnest(xpath('/family/member', profile)) as f from families) x;
+
+"Gomez"	"padre"	"Alex"
+"Gomez"	"madre"	"Sonia"
+"Gomez"	"hijo"	"Brandom"
+"Gomez"	"hija"	"Azaleah"
+```
+
+1. 获取`memeber`元素的`relation`标签和`name`标签中包含的文本元素。此处的语法中必须加数组下标，以为`xpath`语法返回的查询结果是数组类型的，即使返回的数组中只有一个元素也得加下标才能访问。
+
+2. 访问`family`根节点的`name`属性值。访问属性值的语法为`@attribute_name`。
+
+```sql
+create table chickens (id integer primary key);
+create table ducks (id integer primary key, chickens chickens[]);
+create table turkeys (id integer primary key, ducks ducks[]);
+
+insert into ducks values (1, array[row(1)::chickens, row(1)::chickens]);
+insert into turkeys values (1, array(select d from ducks d));
+```
+
+上面我们直接在`ducks`表的一条记录的`chickens`字段中插入了两条`chickens`记录，这种情况下这两条记录的构造不受`chickens`表定义的约束，因此即使它们的主键重复也没关系。我们生成了两条`chickens`记录，填入`ducks`表中，然后将这条`ducks`记录填入到`turkeys`表中，这个郭晨个相当于把两只`chicken`塞入一只`duck`，然后再把`duck`塞入一只`turkey`，跟制作特大啃的过程是完全一样的。
+
+
+
