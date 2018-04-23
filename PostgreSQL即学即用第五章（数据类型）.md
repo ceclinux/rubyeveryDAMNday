@@ -285,4 +285,34 @@ insert into turkeys values (1, array(select d from ducks d));
 上面我们直接在`ducks`表的一条记录的`chickens`字段中插入了两条`chickens`记录，这种情况下这两条记录的构造不受`chickens`表定义的约束，因此即使它们的主键重复也没关系。我们生成了两条`chickens`记录，填入`ducks`表中，然后将这条`ducks`记录填入到`turkeys`表中，这个郭晨个相当于把两只`chicken`塞入一只`duck`，然后再把`duck`塞入一只`turkey`，跟制作特大啃的过程是完全一样的。
 
 
+```sql
+select * from turkeys
 
+|id|ducks|
+|1|"{"(1,\"{(1),(1)}\")"}"|
+```
+
+```sql
+update turkeys set ducks[1].chickens[2] = row(3)::chickens
+where id = 1 returning *
+
+|id|ducks|
+|1|"{"(1,\"{(1),(3)}\")"}"|
+```
+
+```sql
+create type complex_number
+as (r double precision, i double precision)
+```
+
+```sql
+create table circuits (circuit_id serial primary key, ac_volt complex_number)
+```
+
+可以使用如下语法对这个表进行查询
+
+```sql
+select circuit_id, (ac_volt).* from circuits
+```
+
+在`pg`中，你可以对函数和运算符进行重载，使其可以接受多种不同类型的输入。例如，你可以创建一个支持`complex_number`和`integer`相加的`add`函数和相应的`+`计算符，这就实现了对原逻辑的扩展。
