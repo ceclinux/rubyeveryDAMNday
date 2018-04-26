@@ -26,3 +26,39 @@ create table super_users of basic_user (constraint pk_su primary key (user_name)
 ```sql
 alter type hasic_user add attribute phone varchar(10) cascade
 ```
+
+```sql
+set search_path=census,public
+alter table facts add constraint fk_facks_1 foreign key (fact_type_id)
+references lu_fact_types (fact_type_id)
+on update cascade on delete restrict
+create index fki_facts_1 on facts (fact_type_id)
+```
+
+1. 我们在`facts`表和`lu_fact_types`表之间定义了一个外键约束关系。有个这个约束以后，如果主表`lu_fact_types`不存在某`fact_type_id`的记录，那么从表`fact`中就不能插入该`fact_type_id`的记录。
+
+2. 我们定义了一个级联规则、实现了以下功能：（1）如果主表`lu_fact_type`的`fact_type_id`字段发生了变化，那么从表`fact`中相应记录的`fact_type_id`字段会自动进行相应修改，以维持外键引用保持不变 （2）如果从表`fact`中还存在`fact_type_id`字段值的子路，那么主表`lu_fact_type`中相同`fact_type_id`字段值的记录就不允许被删除。`ON DELETE RESTRICT`是默认行为模式，也就是说这个子句不加也可以，但我们建议为了清晰起见最好还是加上。
+
+3. `PostgreSQL`在简历主键约束和唯一性约束时，会自动为相应字段建立索引，但在建立外键约束时候却不会，这一点需要注意。你需要为外键字段手动简历索引以加快关联引用时的查询速度。
+
+## 唯一性约束
+
+主键字段的值是唯一的，但每张表只能定义一个主键，因此如果你需要保证别的字段值唯一，那么必须在该字段上简历唯一性约束或者说唯一索引。简历唯一性约束时会自动在后台创建一个相应的唯一索引。与主键字段类似，简历了唯一性约束的字段不允许为空，并且可以作为外键字段被别的表引用。不过请注意：建立了唯一缩影却没有唯一性约束的字段是可以输入空值的。下面的例子演示了如何建一个唯一索引
+
+```sql
+alter table logs_2011 add constraint uq unique (user_name, log_ts)
+```
+
+注意，是在`user_name, log_ts`这对tuple上的唯一性约束
+
+# check约束
+
+`check`约束能够对表的一个或者多个字段加上一个条件，表中每一行记录必须满足此条件。查询规划期也会利用`check`约束来优化执行速度，比如有些查询附带的条件与待查询表的`check`约束无交集，那么规划器会立即认定该查询未命中目标并返回。示例`6-2`中就有一个`check`约束，该约束可以告诉规划期不要视图查找不符合约束条件的记录。`check`约束支持基于函数和布尔表达式的条件，因此你可以发挥创意编写出一个非常复杂的约束条件来。以下`check`约束可以限制`logs`表中所有用户名必须都小写
+
+```sql
+alter table logs add constraint chk CHECK(user_name = lower(user_name))
+```
+
+# 索引
+
+B-树是关系型数据库中常见的通用索引类型，如果你对别的索引类型不感兴趣，那么一般使用B-树索引就可以了。有的场景下`PostgreSQL`会自动创建索引（比如创建主键约束或者唯一性约束时），那么创建出来的索引就是B-树类型的；如果你自己创建索引时未指定索引类型，那么也默认创建B-树类型的索引。主键约束和唯一性约束唯一支持的就是B-树索引
