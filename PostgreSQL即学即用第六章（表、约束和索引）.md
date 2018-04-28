@@ -59,6 +59,56 @@ alter table logs_2011 add constraint uq unique (user_name, log_ts)
 alter table logs add constraint chk CHECK(user_name = lower(user_name))
 ```
 
+传统的唯一性约束在比较算法中仅使用了“等于”运算符，即保证了指定字段的值在本表的任意两行记录都不相等，而`9.0`板中引入的排他性约束机制拓展了唯一性比较算法机制，可以使更多的运算符来进行比较运算，该类约束特别适用于解决有关时间安排的问题。`PostgreSQL`9.2版本中引入了区间数据类型，该类型特别适合使用排他性约束。
+
+以下是一个使用排他约束的例子，假设你的办公场所所有固定数量的会议室，个项目在使用会议室前必须预定。该示例中使用了`&&`运算符来判定时间区段是否重叠，还使用了`=`运算符来判定会议室房间号是否重复
+
+```sql
+create table schedules(id serial primary key, room smallint, time_slot tstzrange);
+alter table schedules add constraint ex_schedules
+exclude using gist (room with =, time_slot with &&)
+```
+
+
 # 索引
 
 B-树是关系型数据库中常见的通用索引类型，如果你对别的索引类型不感兴趣，那么一般使用B-树索引就可以了。有的场景下`PostgreSQL`会自动创建索引（比如创建主键约束或者唯一性约束时），那么创建出来的索引就是B-树类型的；如果你自己创建索引时未指定索引类型，那么也默认创建B-树类型的索引。主键约束和唯一性约束唯一支持的就是B-树索引
+
+各种数据类型均有其自身特点，因此使用的索引类型不同个，会用到的比较运算符也不同。例如，对于基于区间类型的(range)的缩影来说，最常用的运算符是重叠运算符，然而该运算符对于快速本文搜索领域却毫无一一。对于中文这类表意文字来说，简历的索引基本上不会用到“不等于”运算符；而对引文折了表音文字简历索引时，子母A到Z的排序操作是不可或缺的。
+
+基于以上特点，`PostgreSQL`把一类应用相近的运算符以及这些运算符适用的数据类型组合一起称为一个运算符类（简称`optclass`）。例如,`int4_ops`运算符类包含适用于`int4`类型的`= < > > <>`运算符。`PostgreSQL`提供了一张叫做`pg_class`的系统表，从中可以查到完整的运算符列表，其中包括了系统原生支持的类，也包含了通过扩展包机制添加的类。一种类型的缩影会适用特定的若干种运算符类。
+
+```sql
+select am.amname as index_method, opc.opcname as opclass_name, opc.opcintype::regtype as indexed_type, opc.opcdefault as is_default
+from pg_am am inner join pg_opclass opc on opc.opcmethod = am.oid
+where am.amname = 'btree'
+order by index_method, indexed_type, opclass_name
+
+
+"btree"	"bool_ops"	"boolean"	true
+"btree"	"bytea_ops"	"bytea"	true
+"btree"	"char_ops"	""char""	true
+"btree"	"name_ops"	"name"	true
+"btree"	"int8_ops"	"bigint"	true
+"btree"	"int2_ops"	"smallint"	true
+"btree"	"int4_ops"	"integer"	true
+"btree"	"text_ops"	"text"	true
+"btree"	"text_pattern_ops"	"text"	false
+"btree"	"varchar_ops"	"text"	false
+```
+
+在示例种，仅查询了B-树的相关数据。请注意，每个索引都有多个运算符类，而其中仅有一个会被标记为默认运算符类。绝大多数这样做是没什么问题的，但并非绝对如此。
+
+例如，B-树缩影默认的`text_ops`运算符类种并不支持`~~`运算符，如果建立B-树缩影选择了该运算符类，那么所有适用`LIKE`的查询都无法在`text_ops`运算符种适用索引。因此，如果你的业务场景需要对`varchar`或者`text`类型进行大量`LIKE`模糊查询，那么建缩影时最好是显式适用`text_pattern_ops`或者`varchar_pattern_ops`这两个运算符类。指定运算符类的语法很简单，只需要在建缩影时候加载被索引字段名的后面即可
+
+```sql
+create index idx1 on census.lu_tracts using btree (tract_name text_pattern_ops)
+```
+
+最后请牢记一条，你创建的每一个缩影都只会适用一个运算符类。如果希望一个字段上的索引适用多个运算符类，那么请创建多个索引
+
+```sql
+create index idx2 on census.lu_tracts using btree (tract_name);
+```
+
+现在，在同一个字段上就有了多个索引（单个字段上可建立索引的个数是没有限制的）。规划器处理等值查询时会适用`idx2`，处理`like`查询时会适用`idx1`。
