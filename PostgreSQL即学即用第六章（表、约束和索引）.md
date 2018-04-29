@@ -111,4 +111,37 @@ create index idx1 on census.lu_tracts using btree (tract_name text_pattern_ops)
 create index idx2 on census.lu_tracts using btree (tract_name);
 ```
 
-现在，在同一个字段上就有了多个索引（单个字段上可建立索引的个数是没有限制的）。规划器处理等值查询时会适用`idx2`，处理`like`查询时会适用`idx1`。
+现在，在同一个字段上就有了多个索引（单个字段上可建立索引的个数是没有限制的）。规划器处理等值查询时会适用`idx2`，处理`like`查询时会适用`idx1`。 
+
+`PostgreSQL`的函数功能可以基于字段值的函数运算结果建立索引。函数缩影的用途也是很广泛的，例如可用于对大小写混杂的文本数据建立索引。`PostgreSQL`是一个区分大小写的数据库，如果要实现不区分大小写的查询，那么可以借助如下的函数索引
+
+```sql
+create index fidx on featnames_short
+using btree (upper(fullname) varchar_pattern_ops)
+```
+
+建立了索引之后，类似`SELECT fullname FROM featnames_short WHERE upper(fullname) LIKE 'S%'`这种类型就可以用上索引了。不过要注意，查询语句种使用的函数要与建函数缩影时使用的函数完全一致，这样才能保证用上索引。
+
+## 基于部分记录的索引
+
+基于部分记录的索引（有时也称为已筛选索引）是一种针对表中部分记录的索引，而且这部分记录需要满足`WHERE`语句设置的筛选条件。例如，假设某表中共有`1000000000`条记录，但你值会查询其中一个记录数为`10000`的子集，那么该场景就非常适合使用基于部分记录的索引。这种缩影比全量索引要快，因为其体积小，所以可以把更多缩影数据缓存到内存中，另外该类缩影占用的磁盘空间也会更小。
+
+```sql
+create table subscribes (id serial primary key, name varchar(50) not null, tyoe varchar(50), is_active boolean)
+```
+
+```sql
+create unique index uq on subscribes using btree(lower(name)) where is_active;
+```
+
+多列索引也称为复合索引。另外我们还想介绍的一点是：你可以使用多个基础列创建功能索引。以下是一个多列索引的示例。
+
+```sql
+CREATE INDEX idx on subscribes USING btree (upper(name) varchar_pattern_ops)
+```
+
+`PostgreSQL`的规划器在语句执行过程中会自动个实用一种被称为“位图索引扫描”的策略来同时使用多个索引。该策略可以使多个单列索引同时发挥作用，达到的效果与使用单个复合索引相同。如果你不能确定业务的应用模式是以单列作为查询条件的场景多一些还是同时以多列作为查询条件的场景多一些，那么最好针对可能作为查询条件的每个列单独建立索引，这样是最灵活的做法，规划器会决定如何组合使用这些索引
+
+假设你见了一个复合`B-`树索引，其中半酣`type`、`upper(name)`等多个字段，那么完全没必要针对`type`字段再单独建一个索引，因为规划器要针对`type`字段再单独建一个索引，因为规划器即使在遇到只有`type`但字段的查询条件时也会自动使用该复合索引，这是规划器的一项基本能力。
+
+索引中包含的字段越多也就意味着索引占用的空间越大，能在内存中缓存的索引条目就越少，因此请不要滥用符合索引
