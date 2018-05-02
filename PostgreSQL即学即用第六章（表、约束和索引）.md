@@ -125,3 +125,56 @@ select i_type, generate_series('2012-01-01'::date, '2012-12-31'::date, i_type) a
 ```
 
 在一个复杂的`SQL`语句中使用返回结果集的函数很容易导致意外的结果，这是因为这类函数输出的结果集会与该语句其他部分生成的结果集产生笛卡儿积，从而生成更多的数据行。
+
+PostgreSQL lets you reference columns of other tables in the WHERE condition by specifying the other tables in the USING clause. For example, to delete all films produced by a given producer, one can do:
+
+```sql
+DELETE FROM films USING producers
+  WHERE producer_id = producers.id AND producers.name = 'foo';
+```
+
+```sql
+In an UPDATE, the data available to RETURNING is the new content of the modified row. For example:
+
+UPDATE products SET price = price * 1.10
+  WHERE price <= 99.99
+  RETURNING name, price AS new_price;
+
+In a DELETE, the data available to RETURNING is the content of the deleted row. For example:
+
+DELETE FROM products
+  WHERE obsoletion_date = 'today'
+  RETURNING *;
+```
+
+```sql
+SELECT array_to_json(array_agg(f)) as cat -- 1
+from (
+    select max(fact_type_id) as max_type, category
+    from census.lu_fact_types
+    group by category
+) as f -- 将子查询中f中的所有记录转换为一个基于复合数据类型的数组
+```
+
+PostgreSQL提供了一个名为`json_agg`的函数，该函数的效果相当于上面示例中`array_to_json`和`array_agg`联用的效果，但`json_agg`执行速度更快。
+
+```sql
+SELECT json_agg(f)  == SELECT array_to_json(array_agg(f)) as cat -- 1
+```
+
+9.4版本使用了`FILTER`子句，这是近期`ANSI SQL`标准中新加入的一个关键字。该关键字用于替代为`ANSI SQL`标准语法的`CASE WHEN`语句，使聚合操作的语法得以简化。例如，假设你需要使用`CASE WHEN`子句来统计每个学生不同科目的多次测试的平均成绩
+
+```sql
+SELECT students,
+AVG(CASE WHEN subject= 'algebra' then score ELSE NULL END) As algebra
+FROM test_score
+GROUP BY student
+```
+
+用`FILTER`子句可以实现与上面语句等价的结果
+
+```sql
+AVG(score) FILTER (WHERE subject = 'algebra') As algebra
+```
+
+`PostgreSQL`从`8.4`版开始支持`ANSI SQL`标准中规定的窗口函数特性。通过使用窗口函数，可以在当前记录行中访问到预期存在特定关系的其他记录行，相当于在每行记录上都开了一个访问外部数据的窗口，这也是“窗口函数”这个名称的由来。“窗口”就是当前行可见的外部记录行的范围。通过窗口函数可以把当前行的“窗口”区域内的记录的聚合运算结果附加到当前记录行
