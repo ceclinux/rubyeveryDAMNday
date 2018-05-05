@@ -249,3 +249,79 @@ from product
 外围的`SQL`语句会将该`CTE`作为一个临时表来使用
 
 单个`SQL`语句可以创建多个`CTE`，`CTE`之间使用逗号分割，所有的`CTE`表达式都要落在`WITH`子句的范围。
+
+可写`CTE`是从`9.1`版本开始支持的特性，它扩展了`CTE`的功能范畴，从只读扩展到只写。
+```sql
+create table logs_2011_01_02 (
+	primary key (log_id),
+	constraint chk2
+	check (log_ts >= '2011-01-01' and log_ts < '2011-03-01')
+)
+inherits (logs_2011)
+```
+
+```sql
+with recursive tbls as (
+select
+	c.oid as tableoid,
+	c.relname as tablename
+from
+	pg_class c left join
+	pg_namespace n on n.oid = c.relnamespace left join
+	pg_tablespace t on t.oid = c.reltablespace left join
+	pg_inherits as th on th.inhrelid = c.oid
+	where
+	th.inhrelid is null and
+	c.relkind = 'r'::"char" and c.relhassubclass
+	union all
+	select
+	c.oid as tableoid,
+	tbls.tablename || '->' || c.relname as tablename
+	from
+	tbls inner join
+	pg_inherits as th on th.inhparent = tbls.tableoid inner join
+	pg_class c on th.inhrelid = c.oid left join
+	pg_namespace n on n.oid = c.relnamespace left join
+	pg_tablespace t on t.oid = c.reltablespace
+	)
+	select * from tbls order by tablename;
+  ```
+
+```sql
+with t as (
+	delete from only logs_2011 where log_ts < '2011-03-01' returning *
+)
+insert into logs_2011_01_02 select * from t
+```
+
+上一个`union`查询了所有有子表而无父表的表，下一个`union`是递归查询
+
+`LATERAL`是`9.3`版本中新支持的`ANSI SQL`标准语法，该语法的用途是：假设你需要对两张表或者两个子查询进行关联查询操作，那么参与关联运算的双方是独立的，互相不能读取对方的数据。例如，下面额查询语句会报错，因为`L.year = 2011`不是位于关联的右侧的一个列。
+
+```sql
+select * 
+  from census.facts L
+  inner join lateral
+  (select *
+    from census.lu_fact_types
+	where category = 
+	  case when L.yr = 2011 then 'Housing' else category end
+  ) R
+  on L.fact_type_id = R.fact_type_id
+```
+
+通过`LATERAL`语法可以在一个`FROM`子句中跨两个表共享多列中的数据。但有个限制就是仅支持单项共享，即右侧的表可以提取左侧表中的数据，但反过来不行。
+
+```sql
+create table interval_periods(i_type interval);
+insert into interval_periods (i_type)
+values('5 months'), ('132 days'),('4832 hours')
+```
+
+```sql
+select i_type,dt
+from 
+interval_periods cross join lateral
+generate_series('2012-01-01'::date, '2012-12-31'::date, i_type) as dt
+where not (dt='2012-01-01' and i_type = '132 days'::interval)
+```
