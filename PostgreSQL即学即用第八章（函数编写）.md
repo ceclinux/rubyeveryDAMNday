@@ -32,7 +32,16 @@ select write_to_log('alejandro', 'Woke up at noon.') as new_id
 
 基本上所有编程语言编写的函数都支持返回结果集，`SQL`函数也不例外，它有三种返回结果集的方法；第一种是`ANSI SQL`标准中的规定的`RETURNS TABLE`方法，第二种是使用`OUT`行参，第三种是使用复合数据类型。
 
-```sql
+`IMMUTABLE`任何情况下，只要调用该函数时使用相同的输入就会得到相同的输出
+
+```
+CREATE OR REPLACE FUNCTION
+update_logs(log_id int, param_user_name varchar, param_description text)
+RETURNS void AS
+$$
+UPDATE logs SET user_name = $2, description = $3
+$$
+LANGUAGE 'sql' VOLATILE;
 create or replace function select_logs_so(param_user_name varchar)
 returns setof logs as
 $$
@@ -59,3 +68,47 @@ language sql immutable
 ```
 
 此处定义的状态切换函数有两个输入项：第一个是前次调用本转台切换函数计算后得到的结果，其类型为两个元素的数字型数组，第二个是本轮计算要处理的样本值。如果第二个实参的数值为`NULL`或者为`0`,则本轮无需计算，直接返回实参1的值，否则样本将本次处理的样本数字的`ln`对数雷家到实参数据的第一个元素上，并对实参数组的第二个元素指加`1`。
+
+```sql
+create or replace function geom_mean_final(numeric[2])
+returns numeric as
+$$
+select case when $1[2] > 0 then exp($1[1] / $1[2]) else 0 end;
+$$
+language sql immutable
+```
+
+```sql
+create aggregate geom_mean(numeric)(
+sfunc = geom_mean_state,
+stype = numeric[],
+finalfunc=geom_mean_final,
+initcond = '{0,0}'
+)
+```
+
+`SFUNC`状态切换函数（这个名称不够直观，此处所谓的“状态”是指在聚合运算过程中每处理玩一条记录后得到的中间结果）是实现聚合运算的逻辑主体，它会将自身上一次被调用后生成的计算结果作为本次计算的输入，同时输入的还有当前新一条的待处理记录，这样所将所有记录一条条累计处理完毕后，就得到了基于整个目标记录集的“状态”，也就是最终的聚合结果。有的情况下，`SFUNC`处理得到的结果就是聚合函数需要的最终结果，但另外一些情况下`SFUNC`处理完毕的结果还需要在进行最终加工才是我们想要的聚合结果，`FINALFUNC`就是负责这个最终加工步骤的函数。`FINALFUNC`是可选的，由于它的作用是对`SFUNC`函数的输出结果做最后加工，因此该函数的输入一定是`SFUNC`函数的输出。
+
+第一步是写一个触发器函数
+```sql
+create or replace function trig_time_stamper() returns trigger as
+$$
+begin
+ new.upd_ts := CURRENT_TIMESTAMP;
+ return new;
+ end;
+ $$
+ language plpgsql volatile;
+ ```
+ 
+ 第二步是将此触发器函数显式附加到合适的触发器上。
+ 
+ ```sql
+ create trigger trig_1
+before insert or update of user_name,description
+on logs
+for each row execute procedure trig_time_stamper();
+```
+
+这里实现了字段级触发
+ 
