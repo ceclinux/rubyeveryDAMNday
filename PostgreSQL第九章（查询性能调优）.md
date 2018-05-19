@@ -78,3 +78,36 @@ order by schemaname, tablename, attname
 ```
 
 `pg_stats`表给出了表中指定列的值域分布图，规划期会根据此信息指定相应的执行计划。系统后台会有一个进程持续不断的更新`pg_stats`表。等表中插入或者删除大量数据之后，你应该手动执行`VACUUM ANALYZE`来跟新表的统计信息。`VACCUM`只是将已经删除的记录永久的从表中删除，`ANALYZE`只是更新表的统计信息。
+
+```sql
+alter tablespace pg_default set(random_page_cost=2)
+```
+
+另一个会影响执行策略选择的设置是`random_page_cost`（随机页访问比，简称`RPC`），它表示磁盘上顺序读取和随机读取在同一条记录上的性能比。
+
+random_page_cost (floating point)
+
+    Sets the planner's estimate of the cost of a non-sequentially-fetched disk page. The default is 4.0. This value can be overridden for tables and indexes in a particular tablespace by setting the tablespace parameter of the same name (see ALTER TABLESPACE).
+
+    Reducing this value relative to seq_page_cost will cause the system to prefer index scans; raising it will make index scans look relatively more expensive. You can raise or lower both values together to change the importance of disk I/O costs relative to CPU costs, which are described by the following parameters.
+
+    Random access to mechanical disk storage is normally much more expensive than four times sequential access. However, a lower default is used (4.0) because the majority of random accesses to disk, such as indexed reads, are assumed to be in cache. The default value can be thought of as modeling random access as 40 times slower than sequential, while expecting 90% of random reads to be cached.
+
+    If you believe a 90% cache rate is an incorrect assumption for your workload, you can increase random_page_cost to better reflect the true cost of random storage reads. Correspondingly, if your data is likely to be completely in cache, such as when the database is smaller than the total server memory, decreasing random_page_cost can be appropriate. Storage that has a low random read cost relative to sequential, e.g. solid-state drives, might also be better modeled with a lower value for random_page_cost.
+
+如果你之前执行过一个复杂且耗时较长的查询，那么后续再次执行此查询时会发现快了很多，这是因为系统的数据缓存机制发挥了作用。如果同一个出巡语句按顺序多次执行，而且这些查询涉及的底层数据没有发生变化，那么不管这些语句是被同一个用户还是多个用户执行，得到的结果都应该是一样的。只要内存中还有空间可用于缓存数据，那么规划器就可能会跳过生成执行计划和从磁盘读取表数据的步骤，直接从缓存中获取数据。
+
+```sql
+select 
+count(case when B.isdirty then 1 else null end) as dirty_buffers,
+count(*) as num_buffers
+from
+pg_class as C inner join
+pg_buffercache B on C.relfilenode = B.relfilenode inner join
+pg_database D on b.reldatabase = D.oid and D.datname = current_database()
+group by C.relname
+```
+
+`pg_prewarm`会将指定的常用表预加载到缓存中，以后不管该表是搜测i被用户访问还是非首次访问，响应速度总是很快。
+
+新手常常犯的错误就是容易将子查询当作一个完全独立的数据集来使用。`SQL`语言有一个与传统编程语言很不一样的地方，就是`SQL`语言中并没有很强的“黑盒”概念。也就是说，编写一堆互相独立的子查询并把每个子查询当作一个“黑盒”数据块来看待，只要能得到最后结果就行，而不管其他，这种思路是错误的。它实际上割裂了子查询代码快内部处理逻辑与子查询代码快外部处理逻辑之间的联系，没有将整个`SQL`语句当成一个有机的整体来处理。从多个子查询中取数据与从多个表或者视图中取数据是一样中亚昂的。
