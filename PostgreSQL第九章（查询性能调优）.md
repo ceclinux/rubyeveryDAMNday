@@ -111,3 +111,51 @@ group by C.relname
 `pg_prewarm`会将指定的常用表预加载到缓存中，以后不管该表是搜测i被用户访问还是非首次访问，响应速度总是很快。
 
 新手常常犯的错误就是容易将子查询当作一个完全独立的数据集来使用。`SQL`语言有一个与传统编程语言很不一样的地方，就是`SQL`语言中并没有很强的“黑盒”概念。也就是说，编写一堆互相独立的子查询并把每个子查询当作一个“黑盒”数据块来看待，只要能得到最后结果就行，而不管其他，这种思路是错误的。它实际上割裂了子查询代码快内部处理逻辑与子查询代码快外部处理逻辑之间的联系，没有将整个`SQL`语句当成一个有机的整体来处理。从多个子查询中取数据与从多个表或者视图中取数据是一样中亚昂的。
+
+## 尽量避免`SELECT *`语法
+
+`select *`经常会导致性能浪费，会出现仅仅需要10页数据却查出`1000`页数据这种情况，这显然会导致网络传输负担加大，而且还会出现你可能意想不到的问题：
+
+第一个问题与大对象有关。`PostgreSQL`会使用`TOAST`（全称为`The orginal Attribute Storage Technique`，即超大尺寸属性存储技术 机制来储存二进制大对象以及超大文本。`TOAST`机制机制会将超过主表存储限制的数据存储到一张辅助表中。因此，读取超大字段就是一个夺标关联操作，二者必是个耗时的过程。
+
+PostgreSQL uses a fixed page size (commonly 8 kB), and does not allow tuples to span multiple pages. Therefore, it is not possible to store very large field values directly. To overcome this limitation, large field values are compressed and/or broken up into multiple physical rows. This happens transparently to the user, with only small impact on most of the backend code. The technique is affectionately known as TOAST (or “the best thing since sliced bread”). The TOAST infrastructure is also used to improve handling of large data values in-memory.
+
+TOAST 是“ The Oversized-Attribute Storage Technique ”的缩写，主要用于存储一个大字段的值。要理解 TOAST ，我们要先理解页（ BLOCK ）的概念。在 PG 中，页是数据在文件存储中的基本单位，其大小是固定的且只能在编译期指定，之后无法修改，默认的大小为8 KB 。同时，PG 不允许一行数据跨页存储，那么对于超长的行数据，PG 就会启动 TOAST ，具体就是采用压缩和切片的方式。如果启用了切片，实际数据存储在另一张系统表的多个行中，这张表就叫 TOAST 表，这种存储方式叫行外存储。
+
+
+在深入细节之前，我们要先了解，在 PG 中每个表字段有四种 TOAST 的策略：
+
+    PLAIN ：避免压缩和行外存储。只有那些不需要 TOAST 策略就能存放的数据类型允许选择（例如 int 类型），而对于 text 这类要求存储长度超过页大小的类型，是不允许采用此策略的
+    EXTENDED ：允许压缩和行外存储。一般会先压缩，如果还是太大，就会行外存储
+    EXTERNA ：允许行外存储，但不许压缩。类似字符串这种会对数据的一部分进行操作的字段，采用此策略可能获得更高的性能，因为不需要读取出整行数据再解压。
+    MAIN ：允许压缩，但不许行外存储。不过实际上，为了保证过大数据的存储，行外存储在其它方式（例如压缩）都无法满足需求的情况下，作为最后手段还是会被启动。因此理解为：尽量不使用行外存储更贴切。
+    现在我们通过实际操作来研究 TOAST 的细节：
+
+首先创建一张 blog 表：
+
+```sql
+shop=# create table blog(id int, title text, content text);
+CREATE TABLE
+shop=# \d+ blog;
+                  资料表 "public.blog"
+  栏位   |  型别   | 修饰词 |   存储   | 统计目标 | 描述
+---------+---------+--------+----------+----------+------
+ id      | integer |        | plain    |          |
+ title   | text    |        | extended |          |
+ content | text    |        | extended |          |
+有 OIDs: 否
+```
+
+```sql
+shop=# select relname,relfilenode,reltoastrelid from pg_class where relname='blog';                                      relname | relfilenode | reltoastrelid                                                                                  ---------+-------------+---------------                                                                                  blog    |       74367 |         74370  
+```
+
+```sql
+\d+ pg_toast.pg_toast_16441;
+TOAST 资料表 "pg_toast.pg_toast_74367"
+    栏位    |  型别   | 存储
+------------+---------+-------
+ chunk_id   | oid     | plain
+ chunk_seq  | integer | plain
+ chunk_data | bytea   | plain
+ ```
