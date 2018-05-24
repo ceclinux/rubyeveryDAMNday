@@ -159,3 +159,14 @@ TOAST 资料表 "pg_toast.pg_toast_74367"
  chunk_seq  | integer | plain
  chunk_data | bytea   | plain
  ```
+
+第二个问题与视图有关。我们定义视图的时候一般没办法做到完全精确地指定列，也就是说视图中一般都会带若干可能不需要的列。`PostgreSQL`的视图定义功能是很强大的，你可以使用`SELECT *`语句来定义视图，系统会自动工匠星号替换为母的表的完整字段列表，你也可以在视图定义语句中包含复杂运算表达式及关联查询。这些建视图的语句都是合法的，没有什么问题，但用户访问时就麻烦了，一旦对这种复杂视图执行`SELECT *`查询，那么视图定义中所有的复杂列都会经历漫长的运算过程，总体查询会很慢。
+
+```sql
+create or replace view as
+select tract_id, (select count(*) from census.facts as F where F.tract_id = T.tract_id) as
+num_facts,
+(select count(*) from census.lu_fact_types as Y
+where Y.fact_type_id In......
+)
+```
