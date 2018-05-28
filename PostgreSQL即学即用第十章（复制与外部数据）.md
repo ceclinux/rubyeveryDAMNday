@@ -67,7 +67,10 @@ archive_mode (enum)
 
 ```sql
 create extension file_fdw;
+- 创建外部服务器
 create server my_server foreign data wrapper file_fdw;
+- 创建一个基于文本数据的外部表
 create foreign table devs (developer varchar(150), company varchar(150)) server my_server options (format 'csv', header 'false', filename 'C:\\tt.txt', delimiter '|', null '');
 select * from devs;
 ```
+
