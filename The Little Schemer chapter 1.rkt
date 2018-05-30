@@ -42,3 +42,43 @@
 '(how are you doing so far)
 ; 是的，，因为他用括号把一个S-表达式集合起来了，该列表一共有三个S-表达式，'('(how) are)，'('(you) '(doing so))，far
 '('('(how) are) '('(you) '(doing so)) far)
+
+(list? '())
+
+(atom? '())
+
+(list? '('() '() '() '()))
+
+(car '(a b c))
+
+(car '('(a b c) x y z))
+
+;不能请求一个原子的car
+;(car 'hotdog)
+
+;不能求空列表的car
+;(car '())
+
+; Scheme五法之一，car之法则
+;基本yuanjaincar仅定义为针对非空列表
+
+(car '('( '(hotdogs)) '(and) '(pickle) 'relish))
+
+(car (car '(((hotdogs)) '(and))))
+
+;因为(b c)是列表l扣除(car l)的部分
+(cdr '(a b c))
+
+(cdr '('(x) 't 'r))
+
+;不能请求一个原子的cdr
+;(cdr 'hotdogs)
+
+;不能请求空列表的cdr
+;(cdr '())
+
+;基本远见cdr仅定义为针对非空列表。任意非空列表的cdr总是另一个列表
+
+(car (cdr '('(b) '(x y) '((c)))))
+
+(cdr (cdr '('(b)'(x y)'((c)))))
