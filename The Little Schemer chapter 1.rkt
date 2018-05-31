@@ -77,8 +77,73 @@
 ;不能请求空列表的cdr
 ;(cdr '())
 
-;基本远见cdr仅定义为针对非空列表。任意非空列表的cdr总是另一个列表
+;基本cdr仅定义为针对非空列表。任意非空列表的cdr总是另一个列表
 
 (car (cdr '('(b) '(x y) '((c)))))
 
 (cdr (cdr '('(b)'(x y)'((c)))))
+
+;没有答案，因为(car l)是个原子，cdr不能以原子为参数
+;(cdr (car '(a '(b '(c))d )))
+
+;car与cdr都已非空列表作为参数
+
+(cons 'peanut '(butter and jelly))
+
+;因为cons添加任意的S-表达式到列表开头chu
+(cons '(banana and) '(peanut butter and jelly))
+
+(cons '((help) this) '(is very ((hard) to learn)))
+
+;cons 有两个参数：第一个参数是任意S-表达式，第二个参数是任意列表
+
+(cons '(a b (c)) '())
+
+(cons 'a '())
+
+;第二个参数l必须是列表
+;(cons '((a b c)) 'b)
+
+;(cons 'a 'b)
+
+;Scheme五法之第三法：cons法则 基本元件cons需要两个参数。第二个参数必须是一个列表。结果是一个列表
+
+(cons 'a (cdr '((b) c d)))
+
+;Returns #t if v is the empty list, #f otherwise.
+(null? '())
+
+(null? '(a b c))
+
+(null? 'spaghetti)
+
+;基本元件null?仅定义为针对列表
+
+;atom 有一个参数 该参数是任意的S-表达式
+
+(atom? (car '(harry had a heap of apples)))
+
+(atom? (cdr '(Harry had a heap of apples)))
+
+(atom? (cdr '(harry)))
+
+(atom? (car (cdr '(swing low sweet cherry oat))))
+
+(eq? 'Harry 'Harry)
+
+(eq? 'margarin 'butter)
+
+;eq?有两个参数，都必须是非数字原子
+
+(eq? '() '(strawberry))
+
+(eq? 6 7)
+
+;eq之法则：基本元件eq?需要两个参数。每个参数必须是一个非数字的原子
+
+(eq? (car '(Mary had a little lamb chop)) 'Mary)
+
+;不能比较
+;(eq? (cdr '(soured milk) 'milk))
+
+(eq? (car '(beans beans we need jelly beans))(car (cdr '(beans beans we need jelly beans))))
