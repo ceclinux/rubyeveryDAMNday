@@ -31,4 +31,30 @@
 ;scheme十诫第二诫：使用cons来构建列表
 
 ;构建一个列表的时候，描述第一个典型元素，之后cons到元素的一般性递归上
-                 
+
+(define insertR
+  (lambda (new old lat)
+    (cond
+      ((null? lat) '())
+      ((eq? old (car lat)) (cons old (cons new (cdr lat))))
+      (else (cons (car lat) (insertR new old (cdr lat)))))))
+
+(insertR 'e 'd '(a b c d f g d h))
+
+(define insertL
+  (lambda (new old lat)
+    (cond
+      ((null? lat) '())
+      ((eq? old (car lat)) (cons new lat))
+      (else (cons (car lat) (insertL new old (cdr lat)))))))
+
+(insertL 'e 'd '(a b c d f g d h))
+
+(define subst
+  (lambda (new old lat)
+    (cond
+      ((null? lat) '())
+      ((eq? old (car lat)) (cons new (cdr lat)))
+      (else (cons (car lat) (subst new old (cdr lat)))))))
+
+(subst 'topping 'fudge   '(ice cream with fudge for dessert))
