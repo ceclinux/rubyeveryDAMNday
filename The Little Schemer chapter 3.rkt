@@ -45,34 +45,28 @@
   (lambda (new old lat)
     (cond
       ((null? lat) '())
-      ((eq? old (car lat)) (cons new lat))
-      (else (cons (car lat) (insertL new old (cdr lat)))))))
+      ((eq? old (car lat)) (cons new (cons old (cdr lat))))
+      (else (cons car lat) (insertL new old (cdr lat))))))
 
-(insertL 'e 'd '(a b c d f g d h))
+(insertR 'e 'd '(a b c d f g d h))
 
-(define subst
+(define multiinsertL
   (lambda (new old lat)
     (cond
       ((null? lat) '())
-      ((eq? old (car lat)) (cons new (cdr lat)))
-      (else (cons (car lat) (subst new old (cdr lat)))))))
+      ((eq? (car lat) old) (cons old (cons new (multiinsertL new old (cdr lat)))))
+      (else (cons (car lat) (multiinsertL new old (cdr lat)))))))
 
-(subst 'topping 'fudge   '(ice cream with fudge for dessert))
+(multiinsertL 'topping 'fudge '(ice cream with fudge topping fudge for dessert))               
 
-(define subst2
-  (lambda (new o1 o2 lat)
+;在递归时总是改变至少一个参数。该参数必须向着不断接近结束条件而改变。改变的参数必须在结束条件中得以测试：当使用`cdr`时，用`null?`测试是否结束
+
+(define multisubset
+  (lambda (new old lat)
     (cond
       ((null? lat) '())
-      ((or (eq? o1 (car lat)) (eq? o2 (car lat))) (cons new (cdr lat)))
-      (else (cons (car lat) (subst2 new o1 o2 (cdr lat)))))))
+      ((eq? (car lat) old) (cons new (multisubset new old (cdr lat))))
+      (else (cons (car lat) (multisubset new old (cdr lat)))))))
 
-(subst2 'vanilla 'chocolate 'banana '(banana ice cream with chocolate topping))
+(multisubset 'topping 'fudge '(ice cream with fudge topping fudge for dessert)) 
 
-(define multirember
-  (lambda (a lat)
-    (cond
-      ((null? lat) '())
-      ((eq? a (car lat)) (multirember a (cdr lat)))
-      (else (cons (car lat) (multirember a (cdr lat)))))))
-
-(multirember 'cup '(coffee cup tea cup and hick cup))
