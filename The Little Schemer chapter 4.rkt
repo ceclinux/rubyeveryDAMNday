@@ -72,8 +72,150 @@
 (define tup+
   (lambda (tup1 tup2)
     (cond
-      ((null? tup1) '())
-      (else (cons (+ (car tup1) (car tup2)) (tup+ (cdr tup1) (cdr tup2)))))))
+      ((and (null? tup1) (null? tup2)) '())
+      ((null? tup1) tup2)
+      ((null? tup2) tup1)
+      (else
+       (cons (+ (car tup1)(car tup2))
+             (tup+
+              (cdr tup1) (cdr tup2)))))))
 
-(tup+ '(2 3) '(4 6))
-(tup+ '(3 6 9 11 4) '(8 5 2 0 7))
+(tup+ '(3 7 8 1) '(4 6))
+
+(define tup2+
+  (lambda (tup1 tup2)
+    (cond
+      ((null? tup1) tup2)
+      ((null? tup2) tup1)
+      (else
+       (cons (+ (car tup1) (car tup2))
+             (tup+ (cdr tup1) (cdr tup2)))))))
+
+(tup2+ '(3 7 8 1) '(4 6))
+
+(define lessThan
+  (lambda (x y)
+    (cond
+      ((and (eq? x 0) (eq? y 0)) #f)
+      ((eq? x 0) #t)
+      ((eq? y 0) #f)
+      (else (lessThan (sub1 x) (sub1 y))))))
+
+(lessThan 4 6)
+
+(lessThan 2 2)
+
+(lessThan 3 2)
+
+(define lessThan2
+  (lambda (x y)
+    (cond
+    ((zero? y) #f)
+    ((zero? x) #t)
+    (else (lessThan2 (sub1 x) (sub1 y))))))
+
+(define equal
+  (lambda (x y)
+    (cond
+    ((and (zero? x) (zero? y)) #t)
+    ((or (zero? x) (zero? y)) #f)
+    (else (equal (sub1 x) )(sub1 y)))))
+
+(equal? 2 3)
+
+(equal? 10 10)
+
+(define equal2
+  (lambda (n m)
+    (cond
+      ((zero? m) (zero? n))
+      ((zero? n) #f)
+      (else (equal2 (sub1 n) (sub1 m))))))
+
+(define equal3
+  (lambda (n m)
+    (cond
+      ((> n m) #f)
+      ((< n m) #f)
+      (else #t))))
+
+(define up
+  (lambda (n m)
+    (cond
+      ((zero? m) 1)
+      (else (* n (up  n (sub1 m)))))))
+
+(up 2 3)
+
+(define divide
+  (lambda (n m)
+    (cond
+      ((< n m) 0)
+      (else (add1 (divide (- n m ) m))))))
+
+(define length
+  (lambda (lat)
+    (cond
+      ((null? lat) 0)
+      (else (add1 (length (cdr lat)))))))
+
+(define pick
+  (lambda (n lat)
+    (cond
+      ((eq? 1 n) (car lat))
+      (else (pick (sub1 n) (cdr lat))))))
+
+(pick 4 '(lasagna spaghetti ravioli macaroni meatball))
+
+(define rempick
+  (lambda (n  lat)
+    (cond
+      ((zero? (sub1 n)) (cdr lat))
+      (else (cons (car lat) (rempick (sub1 n) (cdr lat)))))))
+
+(rempick 3 '(hotdogs with hot mustard))
+
+(define no-nums
+  (lambda (lat)
+    (cond
+      ((null? lat) '())
+      ((number? (car lat)) (no-nums (cdr lat)))
+      (else (cons (car lat) (no-nums (cdr lat)))))))
+
+(no-nums '(5 pears 6 prunes 9 dates))
+
+(define all-nums
+  (lambda (lat)
+    (cond
+      ((null? lat) '())
+      ((number? (car lat)) (cons (car lat) (all-nums (cdr lat))))
+      (else (all-nums (cdr lat))))))
+
+(all-nums '(5 pears 6 prunes 9 dates))
+
+(define eqan?
+  (lambda (x y)
+    (cond
+      ((and (number? x) (number? y)) (= x y))
+      ((or (number? x) (number? y)) #f)
+      (else (eq? x y)))))
+
+(define occur
+  (lambda (a lat)
+    (cond
+      ((null? lat) 0)
+      ((eq? a (car lat)) (add1 (occur a (cdr lat))))
+      (else  (occur a (cdr lat))))))
+
+(define one?
+  (lambda n
+      (= 1 n)))
+
+(define rempick2
+  (lambda (n lat)
+    (cond
+      ((one? n) (cdr lat))
+      (else (cons (car lat) (rempick2 (sub1 n) (cdr lat)))))))
+
+(rempick 2 '(hotdogs with hot mustard))
+                
