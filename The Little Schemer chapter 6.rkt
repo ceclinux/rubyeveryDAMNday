@@ -41,3 +41,44 @@
 ;对具有相同性质的子部件进行递归调用
 ; - 列表的子列表
 ; - 算术表达式的子表达式
+
+(define 1st-sub-exp
+  (lambda (aexp)
+       (car (cdr aexp))))
+
+(define 2st-sub-exp
+  (lambda (aexp)
+    (car (cdr (cdr aexp)))))
+
+(define operator
+  (lambda (aexp)
+    (car aexp)))
+
+(define value2
+  (lambda (nexp)
+    (cond
+      ((atom? nexp) nexp)
+      ((eq? (operator nexp) '+)
+       (+ (value2 (1st-sub-exp nexp)) (value2 (2st-sub-exp nexp))))
+            ((eq? (operator nexp) '*)
+       (* (value2 (1st-sub-exp nexp)) (value2  (2st-sub-exp nexp)))))))
+
+(value2 '(* (+ 2 3) 5))
+
+(define sero?
+  (lambda x
+    (null? x)))
+
+(define edd1
+  (lambda x
+    (cons '() x)))
+
+(define zub1
+  (lambda x
+    (cdr x)))
+
+(define addw
+  (lambda (n m)
+    (cond
+      ((sero? m) n)
+      (else (edd1 (addw n (sub1 m)))))))
