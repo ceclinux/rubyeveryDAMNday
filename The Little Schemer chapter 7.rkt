@@ -53,3 +53,52 @@
 
 (subset? '(5 chicken wings)
          '(5 hamburgers 2 pices fired chicken and light duckiling wings))
+
+(define eqset?
+  (lambda (set1 set2)
+(and (subset? set1 set2) (subset? set2 set1))))
+
+(eqset? '(6 large chicken with wings) '(large chicken wings with 6))
+
+(eqset? '(6 large chicken with wings) '(large chicken wings with 7)) 
+
+(define intersect?
+  (lambda (set1 set2)
+  (cond
+    ((null? set1) #f)
+    (else (or (member? (car set1) set2) (intersect? (cdr set1) set2))))))
+
+(intersect? '(stewed tomatoes and macaroni) '(marcaroni and cheese))
+
+(intersect? '(stewed tomatoes and macaroni) '(waht cheese))
+
+(define intersect
+  (lambda (set1 set2)
+    (cond
+      ((null? set1) '())
+      ((member? (car set1) set2) (cons (car set1) (intersect (cdr set1) set2)))
+      (else (intersect (cdr set1) set2)))))
+
+(intersect '(stewed tomatoes and macaroni) '(marcaroni and cheese))
+
+(intersect '(stewed tomatoes and macaroni) '(waht cheese))
+
+(define union
+  (lambda (set1 set2)
+    (cond
+      ((null? set1) set2)
+      ((member? (car set1) set2) (union (cdr set1) set2))
+      (else (cons (car set1)  (union (cdr set1) set2))))))
+
+(union '(stewed tomatoes casserole macaroni and cheese) '(macaroni and cheese))
+
+(define intersectall
+  (lambda (l-set)
+    (cond
+      ((null? (cdr l-set)) (car l-set))
+      (else (intersectall (cons (intersect (car l-set) (car (cdr l-set))) (cdr (cdr l-set))))))))
+
+(intersectall '((6 pears and)
+                (3 peaches and 6 peppers)
+                (8 pears and 6 plums)
+                (and 6 prunes with some apples)))
