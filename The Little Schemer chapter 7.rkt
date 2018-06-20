@@ -102,3 +102,80 @@
                 (3 peaches and 6 peppers)
                 (8 pears and 6 plums)
                 (and 6 prunes with some apples)))
+
+(define atom?
+(lambda (x)
+  (and (not (pair? x)) (not (null? x)))))
+
+(define a-pair?
+  (lambda (x)
+    (cond
+      ((atom? x) #f)
+      ((null? x) #f)
+      ((null? (cdr x)) #f)
+      ((null? (cdr (cdr x))) #t)
+      (else #f))))
+       
+(a-pair? '(3 9))
+
+(define first
+  (lambda (p)
+    (cond
+      (else (car p)))))
+
+(define second
+  (lambda (p)
+    (cond
+      (else (car (cdr p))))))
+
+(define build
+  (lambda (s1 s2)
+    (cond
+      (else (cons s1
+                  (cons s2 '()))))))
+
+(define firsts
+  (lambda (x)
+    (cond
+      ((null? x) '())
+      (else (cons (first (car x)) (firsts (cdr x)))))))
+
+(define fun?
+  (lambda (rel)
+    (set? (firsts rel))))
+
+(fun? '((8 3) (4 2) (7 6) (6 2) (3 4)))
+
+(fun? '((d 4) (b 0) (b 9) (6 2) (3 4)))
+
+(define revrel
+  (lambda (rel)
+    (cond
+      ((null? rel) '())
+      (else (cons (build (second (car rel)) (first (car rel))) (revrel (cdr rel)))))))
+
+(revrel '((8 a) (pumpkin pie) (got sick)))
+
+(define revpair
+  (lambda (pair)
+    (build (second pair) (first pair))))
+
+(define revrel2
+  (lambda (rel)
+    (cond
+      ((null? rel) '())
+      (else (cons (revpair (first rel)) (revrel2 (cdr rel)))))))
+
+(revrel2 '((8 a) (pumpkin pie) (got sick)))
+
+(define one-to-one?
+  (lambda (fun)
+    (fun? (revrel fun))))
+
+(one-to-one? '((grape raisin)
+              (plum prune)
+              (stewed prune)))
+
+(one-to-one? '((grape raisin)
+              (plum prune)
+              (stewed t)))
