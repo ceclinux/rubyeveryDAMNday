@@ -118,3 +118,67 @@
       (else (cons (car lat) ((multiremberT test?) (cdr lat))))))))
 
 ((multiremberT eq?-tuna) '(shrimp salad tuna salad and tuna))
+
+(define multiremember&co
+  (lambda (a lat col)
+    (cond
+      ((null? lat)
+       (col (quote()) (quote())))
+      ((eq? (car lat) a)
+       (multiremember&co a
+          (cdr lat)
+           (lambda (newlat seen)
+             (col newlat
+                  (cons (car lat) seen)))))
+    (else
+     (multiremember&co a
+                       (cdr lat)
+                       (lambda (newlat seen)
+                         (col (cons (car lat) newlat)
+                              seen)))))))
+
+;col是"collector"的缩写。collector有时又被称作"continuation"
+
+;scheme十戒之第十戒
+;构建函数，一次收集多个值
+
+;(multirember&co a lat f)是做什么的
+;其查找lat的每个原子，判断该原子是否等于`(eq?) a`。那些条件判断为假的原子被收集在ls1列表中；条件判断为真的额其他原子则被收集到了
+;第二个列表ls2中。最后，该函数判断(f ls1 ls2)的值
+
+(define multiinsertLR
+  (lambda (new oldL oldR lat)
+    (cond
+      ((null? lat) '())
+      ((eq? oldL (car lat))
+       (cons (cons new oldL) (multiinsertLR new oldL oldR (cdr lat))))
+       ((eq? oldR (car lat))
+       (cons (cons  oldR new) (multiinsertLR new oldL oldR (cdr lat))))
+       (else (cons (car lat) (multiinsertLR new oldL oldR (cdr lat)))))))
+
+(define multiinsertLR&co
+  (lambda (new oldL oldR lat col)
+    (cond
+      ((null? lat)
+       (col '() 0 0))
+      ((eq? (car lat) oldL)
+       (multiinsertLR&co new oldL oldR
+                         (cdr lat)
+                         (lambda (newlat L R)
+                         (col (cons new (cons oldL newlat))
+                              (+ 1 L) R))))
+((eq? (car lat) oldR)
+ (multiinsertLR&co new oldL oldR
+                     (cdr lat)
+                     (lambda (newlat L R)
+                       (col (cons oldR (cons new newlat))
+                            (+ 1 L) R))))
+(else (multiinsertLR&co new oldL oldR
+                        (cdr lat)
+                        (lambda (newlat L R)
+                          (col (cons (car lat) newlat)
+                               L R)))))))
+
+(multiinsertLR&co 'salty 'fish 'chips
+                  '(chips and fish or fish and chips)
+                  (lambda (a b c) (+ b c)))
