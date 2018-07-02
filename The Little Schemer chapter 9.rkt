@@ -87,3 +87,35 @@
       ; (else (build (first pora) (shuffle (second pora)))))))
 
 ; shuffle并不是全函数，因为它交换了pair的两个组成，这意味着我们又得重来
+
+;阿克曼函数
+(define A
+  (lambda (n m)
+    (cond
+      ((zero? n) (+ m 1))
+      ((zero? m) (A (- n 1) 1 ))
+      (else (A (- n 1) (A n (- m 1))))
+      )
+    )
+)
+
+(A 4 3)
+
+;will-stop是一个全函数，它总是返回#t或者#f
+
+; (define last-try
+  ; (lambda (x)
+    ; (and (will-stop? last-try) (eternity x))))
+
+;如果will-stop?  last-try为#f，那么与预测矛盾，因为我们认为last-try并不会停下来
+;如果will-stop? last-try为#t，eternity x停不下来，这有和我们的预测相背了
+;所以will-stop?无法背定义
+
+(define eternity
+  (lambda (x)
+    (eternity x)))
+
+(lambda (l)
+  (cond
+    ((null? l) 0)
+    (else (add1 (eternity (cdr l))))))
