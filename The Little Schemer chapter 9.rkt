@@ -99,7 +99,7 @@
     )
 )
 
-(A 4 3)
+; (A 4 3)
 
 ;will-stop是一个全函数，它总是返回#t或者#f
 
@@ -115,7 +115,46 @@
   (lambda (x)
     (eternity x)))
 
+(define length0
 (lambda (l)
   (cond
     ((null? l) 0)
-    (else (add1 (eternity (cdr l))))))
+    (else (add1 (eternity (cdr l)))))))
+
+ ;写一个函数，以判断一个及一下数量元素的列表的长度
+ 
+(define length1
+(lambda (l)
+  (cond
+    ((null? l) 0)
+    (else (add1 (length0 (cdr l)))))))
+
+(length0 '())
+
+(length1 '(t))
+(length1 '())
+; will run forever
+; (length1 '(t q))
+
+(define length0-2
+((lambda (g)
+   (lambda (l)
+     (cond
+       ((null? l) 0)
+       (else (+ 1 (g (cdr l))))))) eternity))
+
+(length0-2 '())
+
+; will run forever
+; (length0-2 '(1))
+
+(((lambda (mk-length)
+   (mk-length mk-length))
+ (lambda (mk-length)
+   (lambda (l)
+     (cond
+       ((null? l) 0)
+       (else (+ 1 ((mk-length eternity) (cdr l)))))))) '(1))
+
+; (length0-3 '())
+; (length0-3 '(1))
