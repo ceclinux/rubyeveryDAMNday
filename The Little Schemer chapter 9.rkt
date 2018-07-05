@@ -70,21 +70,21 @@
     (cond
       ((atom? pora) 1)
       (else (+ (length* (first pora)) (length* (second pora)))
+            )
       )
     )
-  )
   )
 
 (length* '((a b) c))
 (length* '((a b)(c d)))
 
 ; (define shuffle
-  ; (lambda (pora)
-    ; (cond
-      ; ((atom? pora) pora)
-      ; ((a-pair? (ifrst pora))
-       ; (shuffle (revpair pora)))
-      ; (else (build (first pora) (shuffle (second pora)))))))
+; (lambda (pora)
+; (cond
+; ((atom? pora) pora)
+; ((a-pair? (ifrst pora))
+; (shuffle (revpair pora)))
+; (else (build (first pora) (shuffle (second pora)))))))
 
 ; shuffle并不是全函数，因为它交换了pair的两个组成，这意味着我们又得重来
 
@@ -97,15 +97,15 @@
       (else (A (- n 1) (A n (- m 1))))
       )
     )
-)
+  )
 
 ; (A 4 3)
 
 ;will-stop是一个全函数，它总是返回#t或者#f
 
 ; (define last-try
-  ; (lambda (x)
-    ; (and (will-stop? last-try) (eternity x))))
+; (lambda (x)
+; (and (will-stop? last-try) (eternity x))))
 
 ;如果will-stop?  last-try为#f，那么与预测矛盾，因为我们认为last-try并不会停下来
 ;如果will-stop? last-try为#t，eternity x停不下来，这有和我们的预测相背了
@@ -116,18 +116,18 @@
     (eternity x)))
 
 (define length0
-(lambda (l)
-  (cond
-    ((null? l) 0)
-    (else (add1 (eternity (cdr l)))))))
+  (lambda (l)
+    (cond
+      ((null? l) 0)
+      (else (add1 (eternity (cdr l)))))))
 
- ;写一个函数，以判断一个及一下数量元素的列表的长度
- 
+;写一个函数，以判断一个及一下数量元素的列表的长度
+
 (define length1
-(lambda (l)
-  (cond
-    ((null? l) 0)
-    (else (add1 (length0 (cdr l)))))))
+  (lambda (l)
+    (cond
+      ((null? l) 0)
+      (else (add1 (length0 (cdr l)))))))
 
 (length0 '())
 
@@ -137,11 +137,11 @@
 ; (length1 '(t q))
 
 (define length0-2
-((lambda (g)
-   (lambda (l)
-     (cond
-       ((null? l) 0)
-       (else (+ 1 (g (cdr l))))))) eternity))
+  ((lambda (g)
+     (lambda (l)
+       (cond
+         ((null? l) 0)
+         (else (+ 1 (g (cdr l))))))) eternity))
 
 (length0-2 '())
 
@@ -149,12 +149,49 @@
 ; (length0-2 '(1))
 
 (((lambda (mk-length)
-   (mk-length mk-length))
- (lambda (mk-length)
-   (lambda (l)
-     (cond
-       ((null? l) 0)
-       (else (+ 1 ((mk-length eternity) (cdr l)))))))) '(1))
+    (mk-length mk-length))
+  (lambda (mk-length)
+    (lambda (l)
+      (cond
+        ((null? l) 0)
+        (else (+ 1 ((mk-length eternity) (cdr l)))))))) '(1))
 
 ; (length0-3 '())
 ; (length0-3 '(1))
+
+(((lambda (mk-length)
+    (mk-length mk-length))
+  (lambda (mk-length)
+    (lambda (l)
+      (cond
+        ((null? l) 0)
+        (else (+ 1 ((mk-length mk-length) (cdr l)))))))) '(a b c))
+
+; ((lambda (mk-length)
+    ; (mk-length mk-length))
+  ; (lambda (mk-length)
+    ; ((lambda (length)
+       ; (lambda (l)
+         ; (cond
+           ; ((null? l) 0)
+           ; (else (+ 1 (length (cdr l)))))))
+     ; (mk-length mk-length))))
+
+(((lambda (mk-length)
+    (mk-length mk-length))
+  (lambda (mk-length)
+    (lambda (l)
+      (cond
+        ((null? l)0)
+        (else
+          (add1
+            ((lambda (x)
+               ((mk-length mk-length) x))
+             (cdr l)))))))) '(a))
+
+; Y combinator!!!
+(define Y
+  (lambda(le)
+    ((lambda (f) (f f))
+     (lambda (f)
+       (le (lambda (x) ((f f) x)))))))
