@@ -90,3 +90,80 @@ iex|23 ▶ for person = %{height: height} <- people,
 
 在这段代码中，我们将一个由散列表组成的列表提供给推导式（comprehension）。生成器（generator）将每个散列表（作为整体）绑定到`person`，并且将散列表获得的高度值绑定到`height`。过滤器率选那些高度超过1.5的散列表。
 
+## 更新散列表
+
+```elixir
+m = %{a: 1, b: 2, c: 3}
+m1 = %{ m | b: "two", c: "three"}
+# %{a: 1, b: "two", c: "three"}
+```
+然而，此语法无法向散列表增加新的键值。要增加新的建值，你需要使用`Dict.put_new`
+
+```elixir
+defmodule Subscriber do
+  defstruct name: "", paid: false, over_18: true
+end
+
+iex|6 ▶ s1 = %Subscriber{}
+%Subscriber{name: "", over_18: true, paid: false}
+iex|7 ▶ s2 = %Subscriber{ name: "Dave"}
+%Subscriber{name: "Dave", over_18: true, paid: false}
+iex|8 ▶ s3 = %Subscriber{ name: "Mary", paid: false}
+%Subscriber{name: "Mary", over_18: true, paid: false}
+iex|9 ▶ s3 = %Subscriber{ name: "Mary", paid: true}
+%Subscriber{name: "Mary", over_18: true, paid: true}
+```
+
+可以用点记和模式匹配来访问字段
+
+```elixir
+iex|10 ▶ s3.name
+"Mary"
+
+iex|11 ▶ %Subscriber{name: a_name} = s3
+%Subscriber{name: "Mary", over_18: true, paid: true}
+iex|12 ▶ a_name
+"Mary"
+```
+
+```elixir
+
+defmodule Attendee do
+  defstruct name: "", paid: false, over_18: true
+
+  def may_attend_after_party(attendee = %Attendee{}) do
+    attendee.paid && attendee.over_18
+  end
+
+  def print_vip_badge(%Attendee{name: name}) when name != "" do
+    IO.puts "Very cheap badge for #{name}"
+  end
+
+  def print_vip_badge(%Attendee{}) do
+    raise "missing name for badge"
+  end
+end
+```
+
+```elixir
+iex|1 ▶ a1 =  %Attendee{name: "Dave", over_18: true}
+%Attendee{name: "Dave", over_18: true, paid: false}
+
+iex|5 ▶ a2 = %Attendee{a1| paid: true}
+%Attendee{name: "Dave", over_18: true, paid: true}
+
+iex|6 ▶ Attendee.may_attend_after_party(a2)
+true
+```
+
+```elixir
+iex|7 ▶ a3 = %Attendee{}
+%Attendee{name: "", over_18: true, paid: false}
+iex|8 ▶ Attendee.print_vip_badge(a3)
+
+▶▶▶
+** (RuntimeError) missing name for badge
+    defstruct1.exs:13: Attendee.print_vip_badge/1
+```
+
+前面的例子在访问结构体的属性时使用了点符号。这可能让你感到奇怪，结构体的散列表有很多共同点，然而访问散列表却使用的是`some_map[:name]`
