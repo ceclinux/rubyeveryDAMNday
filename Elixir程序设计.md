@@ -167,3 +167,89 @@ iex|8 ▶ Attendee.print_vip_badge(a3)
 ```
 
 前面的例子在访问结构体的属性时使用了点符号。这可能让你感到奇怪，结构体的散列表有很多共同点，然而访问散列表却使用的是`some_map[:name]`
+
+#嵌套字典结构
+
+```elixir
+iex|1 ▶ report = %BugReport{owner: %Customer{name: "Dave", company: "Pragmatic"}, details: "broken"}
+%BugReport{
+  details: "broken",
+  owner: %Customer{company: "Pragmatic", name: "Dave"},
+  severity: 1
+}
+
+iex|4 ▶ report.owner.company
+"Pragmatic"
+
+iex|6 ▶ report = %BugReport{ owner: %Customer { report.owner| company: "PragProg"}}
+%BugReport{
+  details: "",
+  owner: %Customer{company: "PragProg", name: "Dave"},
+  severity: 1
+}
+
+iex|2 ▶ put_in(report.owner.company, "Fack")
+%BugReport{
+  details: "broken",
+  owner: %Customer{company: "Fack", name: "Dave"},
+  severity: 1
+}
+
+iex|3 ▶ report2 = %{owner: %{name: "Dave", company: "Pragmatic"}, severity: 1}
+%{owner: %{company: "Pragmatic", name: "Dave"}, severity: 1}
+
+iex|4 ▶ put_in(report2[:owner][:company], "PragProg")
+%{owner: %{company: "PragProg", name: "Dave"}, severity: 1}
+
+#HashSet<[2, 3, 4, 1, 5]>
+iex|6 ▶ set1 = Enum.into 1..5, MapSet.new
+#MapSet<[1, 2, 3, 4, 5]>
+iex|7 ▶ Set.member? set1, 3
+warning: Set.member?/2 is deprecated, use the MapSet module for working with sets
+  iex:7
+
+true
+iex|8 ▶ MapSet.member? set1, 3
+true
+iex|9 ▶ set2 = Enum.into 3..8, HashSet.new
+warning: HashSet.new/0 is deprecated, use the MapSet module instead
+  iex:9
+
+#HashSet<[7, 6, 3, 4, 5, 8]>
+iex|10 ▶ Set.intersection set1, set2
+warning: Set.intersection/2 is deprecated, use the MapSet module for working with sets
+  iex:10
+
+#MapSet<[3, 4, 5]>
+iex|11 ▶
+```
+
+```elixir
+iex|14 ▶ list = Enum.to_list 1..5
+[1, 2, 3, 4, 5]
+iex|15 ▶ Enum.map list, &(&1 * 10)
+[10, 20, 30, 40, 50]
+iex|16 ▶ Enum.map list, &String.duplicate("*", &1)
+["*", "**", "***", "****", "*****"]
+```
+
+```elixir
+iex|1 ▶ s = Stream.map [1,3,5,6], &(&1 + 1)
+#Stream<[
+  enum: [1, 3, 5, 6],
+  funs: [#Function<48.100999549/1 in Stream.map/2>]
+]>
+iex|2 ▶ Enum.to_list s
+[2, 4, 6, 7]
+```
+
+由于流是可枚举的，你也可以将流传给流函数。正因为这样，我们说流是可组合的（composable）
+
+```elixir
+iex|5 ▶ [1,2,3,4] |>
+...|5 ▶ Stream.map(&(&1*&1)) |>
+...|5 ▶ Stream.map(&(&1+1)) |>
+...|5 ▶ Stream.filter(fn x -> rem(x,2) == 1 end) |>
+...|5 ▶ Enum.to_list
+[5, 17]
+```
