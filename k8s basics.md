@@ -33,3 +33,11 @@ A Pod always runs on a Node. A Node is a worker machine in Kubernetes and may be
 Every Kubernetes Node runs at least:
 - Kubelet, a process responsible for communication between the Kubernetes Master and the Node; it manages the Pods and the containers running on a machine.
 -     A container runtime (like Docker, rkt) responsible for pulling the container image from a registry, unpacking the container, and running the application.
+
+Kubernetes Pods are mortal. Pods in fact have a lifecycle. When a worker node dies, the Pods running on the Node are also lost. A ReplicationController might then dynamically drive the cluster back to desired state via creation of new Pods to keep your application running.
+
+A Service in Kubernetes is an abstraction which defines a logical set of Pods and a policy by which to access them. Services enable a loose coupling between dependent Pods. 
+
+A Service routes traffic across a set of Pods. Services are the abstraction that allow pods to die and replicate in Kubernetes without impacting your application.
+
+Time to first byte (TTFB) is a measurement used as an indication of the responsiveness of a webserver or other network resource. 
