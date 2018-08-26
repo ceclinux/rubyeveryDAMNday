@@ -41,3 +41,27 @@ A Service in Kubernetes is an abstraction which defines a logical set of Pods an
 A Service routes traffic across a set of Pods. Services are the abstraction that allow pods to die and replicate in Kubernetes without impacting your application.
 
 Time to first byte (TTFB) is a measurement used as an indication of the responsiveness of a webserver or other network resource. 
+
+The DESIRED state is showing the configured number of replicas
+
+The CURRENT state show how many replicas are running now
+
+The UP-TO-DATE is the number of replicas that were updated to match the desired (configured) state
+
+The AVAILABLE state shows how many replicas are actually AVAILABLE to the users
+
+To list your deployments use the get deployments command: kubectl get deployments
+
+To list the running Pods use the get pods command:
+```
+kubectl get pods
+```
+To view the current image version of the app, run a describe command against the Pods (look at the Image field):
+```
+kubectl describe pods
+```
+
+To update the image of the application to version 2, use the set image command, followed by the deployment name and the new image version:
+```
+kubectl set image deployments/kubernetes-bootcamp kubernetes-bootcamp=jocatalin/kubernetes-bootcamp:v2
+```
