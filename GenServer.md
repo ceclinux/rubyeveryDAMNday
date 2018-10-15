@@ -1,13 +1,8 @@
 Naming dynamic processes with atoms is a terrible idea! If we use atoms, we would need to convert the bucket name (often received from an external client) to atoms, and **we should never convert user input to atoms**. This is because atoms are not garbage collected. Once an atom is created, it is never reclaimed. Generating atoms from user input would mean the user can inject enough different names to exhaust our system memory!
 
-
-
 Instead of abusing the built-in name facilit, we will create our own `process registry` that associates the bucket name to the bucket process.
 
-
-
 A Genserver is implemented in two parts: the client API and the server callbacks. You can either combine both parts into a single module or you can separate them into a client module and a server module. The client and server run in separate processes, with the client passing message back and forth to the server as its functions are called.
-
 
 
 ```elixir
@@ -64,4 +59,131 @@ The first is the `init/1` callback, that receives the second argument given to `
 
 
 
-For `call/2` requests, we implement a `handle_call/3` callback that receives the `request`,  the process from which we received the request `_from`, and the current server state `names`. The
+For `call/2` requests, we implement a `handle_call/3` callback that receives the `request`,  the process from which we received the request `_from`, and the current server state `names`. The `handle_call/3` callback returns a tule in the format `{:reply, reply, new_state}`. The first element of the tuple, `:reply`, indicates that server should send a reply back to the client. The second element, `reply`, is what will be sent to the client while the third, `new_state` is the new server state
+
+For `cast/2` requests, we implement a `handle_cast/2` callback that receives the request and the current server state(`names`). The `handle_cast/2` callback returns a tuple in the format `{:noreply, new_state}`.
+
+```elixir
+defmodule KV.RegistryTest do
+  use ExUnit.Case, async: true
+
+    setup do
+        registry = start_supervised!(KV.Registry)
+        %{registry: registry}
+    end
+
+   test "spawns buckets", %{registry: registry} do
+     assert KV.Registry.lookup(registry, "shopping") == :error
+
+     KV.Registry.create(registry, "shopping")
+     assert {:ok, bucket} =
+     KV.Registry.lookup(registry, "shopping")
+
+     KV.Bucket.put(bucket, "milk", 1)
+       assert KV.Bucket.get(bucket, "milk") == 1
+   end
+end
+
+```
+
+The `start_supervised!` fucntion will do the job of starting the `KV.Registry`
+and the one we wrote for `KV.Bucket`. Instead of starting the registry by hand
+by calling `KV.Registry.startlink/1`, we instead called the
+`start_supervised/1` function, passing the `KV.Registry` module.
+
+The `start_supervised!` funtion wil do the job of starting the `KV.Registry`
+process by calling `start_link/1`. The advantage of using `start_supervised!`
+is that  ExUnit will guarantee the state of one test is not going to interfere
+with the next on in case they depend on shared resources.
+
+```elixir
+test "removes buckets on exit", %{registry: registry} do
+  KV.Registry.create(registry, "shopping")
+    {:ok, bucket} = KV.Registry.lookup(registry, "shopping")
+      Agent.stop(bucket)
+        assert KV.Registry.lookup(registry, "shopping") == :error
+        end
+```
+
+The test above will fail on the last assertion as the bucket name remains in
+the registry every after we stop the bucket process.
+
+In order to fix this bug, we need the registry to monitor every bucket it
+spawns. Once we set up a monitor, the registry will receive a notification
+every time a bucket process exits, allowing us to clean the registry up.
+
+```elixir
+iex|1 ▶ {:ok, pid} = KV.Bucket.start_link([])
+{:ok, #PID<0.156.0>}
+iex|2 ▶ Process.monitor(pid)
+#Reference<0.1308570577.471334915.235085>
+iex|3 ▶ Agent.stop(pid)
+:ok
+iex|4 ▶ flush()
+{:DOWN, #Reference<0.1308570577.471334915.235085>, :process, #PID<0.156.0>,
+ :normal}
+ :ok
+ iex|5 ▶
+```
+
+Noe `Process.monitor(pid)` returns a unique reference that allows us to match
+upcoming messages to that monitoring reference. After we stop the agent, we
+can `flush/0` all messages and notice a `:DOWN` message arrived, with the
+exact reference returned by monitor, notifying that the bucket process exited
+with reason `:normal`
+
+
+
+```elixir
+iex|1 ▶ {:ok, pid} = KV.Bucket.start_link([])
+{:ok, #PID<0.136.0>}
+iex|2 ▶ Agent.stop(pid)
+:ok
+iex|3 ▶ flush()
+:ok
+}
+```
+```elixir
+## Server callbacks
+
+def init(:ok) do
+  names = %{}
+    refs = %{}
+      {:ok, {names, refs}}
+      end
+
+      def handle_call({:lookup, name}, _from, {names, _} = state) do
+        {:reply, Map.fetch(names, name), state}
+        end
+
+        def handle_cast({:create, name}, {names, refs}) do
+          if Map.has_key?(names, name) do
+              {:noreply, {names, refs}}
+                else
+                    {:ok, pid} = KV.Bucket.start_link([])
+                        ref = Process.monitor(pid)
+                            refs = Map.put(refs, ref, name)
+                                names = Map.put(names, name, pid)
+                                    {:noreply, {names, refs}}
+                                      end
+                                      end
+
+                                      def handle_info({:DOWN, ref, :process,
+                                      _pid, _reason}, {names, refs}) do
+                                        {name, refs} = Map.pop(refs, ref)
+                                          names = Map.delete(names, name)
+                                            {:noreply, {names, refs}}
+                                            end
+
+                                            def handle_info(_msg, state) do
+                                              {:noreply, state}
+                                              end
+                                              end
+                                              
+```
+
+Observe that we were able to considerably change the server implementation
+without changing any of the client API. That's one of the benefits of
+explicitly segregating the server and the client.
+
+
