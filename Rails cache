@@ -1,0 +1,179 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Query caching is a Rails feature that caches the result set returned by each query. If Rails encouters the same query again for the request, it will use the cached result set as opposed to running the query against the database again."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "```ruby\n",
+    "\n",
+    "For example:\n",
+    "class ProductsController < ApplicationController\n",
+    " \n",
+    "  def index\n",
+    "    # Run a find query\n",
+    "    @products = Product.all\n",
+    " \n",
+    "    ...\n",
+    " \n",
+    "    # Run the same query again\n",
+    "    @products = Product.all\n",
+    "  end\n",
+    " \n",
+    "end\n",
+    "```\n"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "The second time the same query is run against the database, its not actually going to hit the database. The first time the result is returned from the query it is stored in the query cache(in memory) and the second time it's pulled from memory.\n",
+    "\n",
+    "However, it's important to note that query caches are created at the start of an action and destroy at the end of that action and thus persist only for the duration of the action. "
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Dynamic web applications usually build pages with a variety of components not all of which have the same caching characteristics. When different parts of the page need to be cached and expired separately you can use Fragment Caching.\n",
+    "\n",
+    "Fragment Caching allows a fragment of view logic to be wrapped in a cache block and served out of the cache store when the next request comes in."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "For example, if you wanted to cache each product on a page, you could use this code:"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "```ruby\n",
+    "<% @products.each do |product| %>\n",
+    "  <% cache product do %>\n",
+    "    <%= render product %>\n",
+    "  <% end %>\n",
+    "<% end %>\n",
+    "```"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "When your application receives its first request to this page, Rails will write a new cache entry with a unique key. A key looks something like this "
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "```\n",
+    "views/products/1-201505056193031061005000/bea67108094918eeba42cd4a6e786901\n",
+    "```"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "The number in the middle is the `product_id` followed by the timestamp value in the `updated_at` attribute of the product record. Rails uses the time stamp value to make sure it is not serving the stale data. If the value of `updated_at` has changed, a new key will be generated. Then rails will write a new cache to that key"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Cache fragments will also be expired when the view fragment changes(the HTML in the view changes). The string of characters at the end of the key is a template tree digest. It is a hash digest computed base on the contents of the view fragment you are caching. If you change the view fragment, the digest will change, expiring the existing file."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "If you want to cache a fragment under certain conditions, you can use `cache_if` or `cache_unless`"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "```erb\n",
+    "<% cache_if admin?, product do %>\n",
+    "  <%= render product %>\n",
+    "<% end %>\n",
+    "```"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "The render helper can also cache individual templates rendered for a collection. It can even one up the previous example with each by reading all cache templates at once instead of one by one. This is done by passing cached: true when rendering the collection:"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "```erb\n",
+    "<%= render partial: 'products/product', collection: @products, cached: true %>\n",
+    "```"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "You may want to nest cached fragments inside other cached fragments. This is called Russian doll caching."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Sometimes you need to cache a particular value or query result instead of caching view fragments. Rails caching mechanism works great for storing any kind of information."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "The most effcient way to implement love-level caching is using the `Rails.cache.fetch` method. This method does both reading and writing to the cache.When passed only a single argument, the key is fetched and value from the cache is returned. If a block is passed, that block will be executed in the event of a cache miss. The return value of the block will be written to the cache under the given cache key, and the return value will be returned. In case of cache hit, the cached value will be returned without executiing the block."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Consider the following example. An application has a product model with an instance method that looks up the product's price on a competing website. The data returned by this method woulb be perfect for low-level caching"
+   ]
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Ruby 2.5.1",
+   "language": "ruby",
+   "name": "ruby"
+  },
+  "language_info": {
+   "file_extension": ".rb",
+   "mimetype": "application/x-ruby",
+   "name": "ruby",
+   "version": "2.5.1"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 2
+}
