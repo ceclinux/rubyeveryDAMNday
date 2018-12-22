@@ -1,0 +1,190 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "一个Web服务器对请求进行响应的典型步骤如下。\n",
+    "\n",
+    "1. 服务器对客户端发来的请求进行解析\n",
+    "2. 请求被转发给一个预定义的处理器\n",
+    "3. 处理其可能会从数据库中取数据\n",
+    "4. 处理器根据取出的数据对模版进行渲染\n",
+    "5. 处理器向客户返回渲染后的内容作为对请求的响应"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Rails cookie"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "```ruby\n",
+    "# Sets a simple session cookie.\n",
+    "# This cookie will be deleted when the user's browser is closed.\n",
+    "\n",
+    "cookies[:user_name] = \"david\"\n",
+    "\n",
+    "# Cookie values are String based. Other data types need to be serialized.\n",
+    "cookies[:lat_lon] = JSON.generate([47.68, -122.37])\n",
+    "\n",
+    "# Sets a cookie that expires in 1 hour.\n",
+    "cookies[:login] = { value: \"XJ-122\", expires: 1.hour.from_now }\n",
+    "\n",
+    "# Sets a signed cookie, which prevents users from tampering with its value.\n",
+    "# The cookie is signed by your app's `secrets.secret_key_base` value.\n",
+    "# It can be read using the signed method `cookies.signed[:name]`\n",
+    "cookies.signed[:user_id] = 33\n",
+    "\n",
+    "# Sets an encrypted cookie value before sending it to the client which\n",
+    "# prevent users from reading and tampering with its value.\n",
+    "# The cookie is signed by your app's `secrets.secret_key_base` value.\n",
+    "# It can be read using the encrypted method `cookies.encrypted[:name]`\n",
+    "cookies.encrypted[:discount] = 45\n",
+    "\n",
+    "# Sets a \"permanent\" cookie (which expires in 20 years from now).\n",
+    "cookies.permanent[:login] = \"XJ-122\"\n",
+    "\n",
+    "# You can also chain these methods:\n",
+    "cookies.permanent.signed[:login] = \"XJ-122\"\n",
+    "```"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "![](https://img.vim-cn.com/b5/b6ade4b93e3ef201331b5fab9333593f43801d.jpg)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## 签名cookie"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "通常会存储用户名，可能还有用户Id、用户最后一次成功登陆的时间，以及网站觉得有用的任何信息。除了用户的相关信息之外，签名`cookie`还包含一个签名，服务器可以使用这个签名来验证浏览器发送的信息是否经过改动\n",
+    "\n",
+    "验证`cookie`所需的一切信息都存储在`cookie`里面，`cookie`可以包含额外的信息，并且对这些签名也很容易\n",
+    "\n",
+    "坏处：正确的处理这些签名很难。很容易忘记对数据进行签名，或者忘记验证数据的签名。从而造成安全漏洞。"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## 令牌cookie"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "令牌`cookie`会在`cookie`里面存储一串随机字节作为令牌，服务器可以根据令牌在数据库中查找令牌的拥有者。随着时间推移，旧令牌会被新令牌取代\n",
+    "\n",
+    "添加信息非常容易。`cookie`的提及非常小，因此移动终端和速度较慢的客户端可以更快的发送请求。\n",
+    "\n",
+    "坏处：需要在服务器中存储更多信息。如果使用的是关系数据库，那么载入和存储`cookie`的代价可能会很高\n"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "除了用户登陆信息之外，`Fake Web Retailer`还可以将用户的访问时长和已浏览商品的数量等信息存储到数据库里面，这样便于将来通过分析这些信息来学习如何更好地向用户推销商品"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "一般来说，用户在决定购买某个或某些商品之前，通常都会先浏览多个不同的商品，而记录用户浏览过的所有商品以及用户最后一次访问页面的时间等信息来，通常会导致大量的数据库写入。从长远来看，用户的这些浏览数据的确非常有用，但问题在于，即使经过优化，大多数关系数据库每秒也只能插入、更新或者删除`200~2000`个数据行。尽管批量插入、批量更新和批量删除等操作可以更快的速度执行，但因为客户端每次浏览网页都只更新少数几个行，所以告诉的批量插入在这里并不适用。"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "```python\n",
+    "\n",
+    "def check_token(conn, token)\n",
+    "  return conn.get('login:', token)\n",
+    "```"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "用户每次浏览页面的时候的时候，程序都会对用户存储在登陆散列里面的信息进行更新，并将用户的令牌和当前时间戳添加到记录最近登陆用户的有序集合里面，并在被记录的商品数量超过25个时，对这个有序集合进行裁剪。"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "```python\n",
+    "def update_token(conn, token, user, item = None)\n",
+    "  timestamp = time.time()\n",
+    "  conn.hset('login:', token, user)\n",
+    "  conn.zadd('recent', token, timestamp)\n",
+    "  if item:\n",
+    "    conn.zadd('viewed:' + token, item, timestamp)\n",
+    "    conn.zremrangebyrank('viewed:' + token, 0, -26)\n",
+    "```"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "```redis\n",
+    "127.0.0.1:6379> ZADD myzset 1 \"one\"\n",
+    "(integer) 1\n",
+    "127.0.0.1:6379> ZADD myzset 2 \"two\"\n",
+    "(integer) 1\n",
+    "127.0.0.1:6379> ZADD myzset 3 \"three\"\n",
+    "(integer) 1\n",
+    "127.0.0.1:6379> ZREMRANGEBYRANK myzset 0 1\n",
+    "(integer) 2\n",
+    "127.0.0.1:6379> ZRANGE myzset 0 -1 WITHSCORES\n",
+    "1) \"three\"\n",
+    "2) \"3\"\n",
+    "```"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Ruby 2.5.1",
+   "language": "ruby",
+   "name": "ruby"
+  },
+  "language_info": {
+   "file_extension": ".rb",
+   "mimetype": "application/x-ruby",
+   "name": "ruby",
+   "version": "2.5.1"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 2
+}
