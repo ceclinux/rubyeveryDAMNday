@@ -68,11 +68,25 @@ $$y = sign(w^{*}x - b^{*})$$
 
 Therefore, to predict whether an email message is spam or not spam using an SVM model, you have to take a text of the message, convert it into a feature vector, then multiply this vector by **w***, subtract b* for parameters **w** and b* and take the sign of the result. This will give us the prediction (+1 means "spam", -1 means "not spam")
 
+The constraints are natually:
+
+$$ wx_{I} - b \ge 1\  if\  y_{I} = +1$$
+
+$$ wx_{I} - b \le -1\  if\  y_{I} = -1$$
+
+We would prefer that the hyperplane separates positive examples from negative one with with the largest **margin**. The margin is the distance between the closest examples of two classes, as defined by the decision boundary. A large margin contributes to a better **generalization**, that is how well the model will classify new examples in the future. To achieve that, we need to minimize the Euclidean norm of  **w** denoted by $||w||$ and given by $\sqrt{\sum^{D}_{j=1}(w^{(j)})^2}$
+
+So, the optimization problem that we want the machine to solve looks like this:
 
 
 
+Minimize $||w||$ subject to $$ y_{I}(wx_{I} - b ) \gt +1$$ for $$I = 1, … , N$$.
+
+The solution of this optimization problem, given by $$w^{*}$$ and $b^{*}$, is called the **statistical model**, or, simply, the   **model**. The process of building the model is called **training**.
 
 
+
+This is how Support Vector Machines work. This particular version of the algorithm builds the so-called linear model.  It is called linear because the decision boundary is a straight line(or a plane, or a hyperplane.) SVM can also incorporate **kernels** that can make the decision arbitrarily non-linear. In some cases, it could be impossible to perfectly separate the two groups of points because of noise in the data, errors of labeling, or outliers(examples very different from a "typical" example in the dataset). 
 
 
 
