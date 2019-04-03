@@ -61,6 +61,58 @@ The DAG shortest path solution creates a graph with $O(nS)$ vertices, where each
 The solution running time is not polynomial in the input size.
 
 
+## Polynomial time vs pseudo-polynomial time
+
+### Dynamic Programming for Knapsack
+
+
+
+The input for an instance of the knapsack problem can be represented in reasonably compact form as follows:
+
+- The number of items $n$, which can be represented using $O(log n)$ bits
+- $n$ item weights. We notice that the item weight should be between $0...S$ because we can ignore any items whose weight exceeds the knapsack capacity. This means that each weight can be represented using $O(log S)$ bits, and all the weights will take up $O(n log S)$ bits.
+- $n$ item values. Let $V$ be the maximum value, so we can represent each value using $O(logV)$ bits, and all the values will take up $O(n log V)$ bits.
+
+The total input size is $O(log(n) + n(logS + logV)) = O(n(log S + log V))$. Let $b = log S, v = log V$ , so the input size is $O(n(v+b))$ . The running time for the DP solution is $O(nS) = O(n*2^{b})$ . 
+
+
+
+We can double the input size by doubling the number of items, so $n' = 2n$. The running time is $O(nS)$, so we can expect that the running time will double. However, if we double the input size by doubling b, the running time will increase quadratically.
+
+
+
+### Dijkstra for the Shortest-Paths
+
+Given a graph $G$ with $V$ vertices and $E$ edges, Dijkstra's algorithm implemented with binary heaps can compute single-source shortest-paths in $O(ElogV)$.
+
+The input graph for an instance of the single-source problem can be represented in a reasonably compact form as follows
+
+- The number of vertices $V$, which can be represented using $O(logV)$ bits.
+- The number of edges $E$, which can be represented using $O(logE)$ bits.
+- $E$ edges, represented as a list of tuple $(s_{i}, t_{i}, w_{i})$(directed edge $i$ goes from vertex $S_{i}$ to vertex $t_{i}$, and has weight $w_{i}$). We notice that $s_{i}$ and $t_{i}$ can be represented using $O(logV)$ bits, since they must address $V$ vertices. Let the maximum weight be $W$, so that each $w_{i}$ takes up $O(log W)$ bits. It follows that all edges take up $O(E(logV + logW)) $ bits
+
+The total input size is $O(log(V) + log(E) +E(2logV + logW)) = O(E(logV + logW))$. Let $b = logW$, so the input size is $O(E(logV+b))$
+
+Note that the graph representation above, though intuitive, is not suitable for running Dijkstra. However, the edge list representation can be used to build an adjacency list representation in $O(V+E)$, so the representation choice does not impact the total running time of Dijkstra's algorithm, which is $O(ElogV)$
+
+Note that the graph representation above, is not suitable for running Dijkstra. However, the edge list representation can be used to build an adjacency list representation in $O(V+E)$, so the representation choice does not impact the  total running time of the Dijkstra's algorithm, which is $O(ElogV)$
+
+
+
+### adjacency list representation
+
+Compare this result to the Knapsack solution's running time. In this case, the running time is polynomial(actually linear) in the number of bits required to represent the input.  If we double the input size by doubling $b$, the width of the numbers used to represent edge weights, the running time doesn't change. 
+
+![](https://cdncontribute.geeksforgeeks.org/wp-content/uploads/undirectedgraph.png)
+
+
+
+This can be represented by 
+
+![](https://cdncontribute.geeksforgeeks.org/wp-content/uploads/listadjacency.png)
+
+
+
 
 
 
