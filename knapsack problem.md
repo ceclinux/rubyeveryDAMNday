@@ -111,6 +111,65 @@ This can be represented by
 
 ![](https://cdncontribute.geeksforgeeks.org/wp-content/uploads/listadjacency.png)
 
+## Subset Sum
+
+In a variant of the Knapsack problem, all the items in the vault are gold bars. The value of a gold bar is directly proportional to its weight. Therefore,  ignorer to make the most amount of money, you must fill your knapsack up to its full capacity of $$S$$ pounds. Can you find a subset of the gold bars whose weights add up to exactly $$S$$?
+
+
+
+Dynamic Programming is generally used for optimization problems that involve maximizing an objective. The Subset Sum problem asks us for a boolean $(TRUE/FALSE)$  answer to the question "Is there a combination of bars whose weight add up to $S$ or not?". Fortunately, we can use the Boolean logic formulation below to transform this into a maximization problem.
+
+
+
+We'll use 1 as True and 0 as false. This is motivated by the fact that we want to arrive to arrive to an answer of TRUE whenever that is possible, and only arrive to an answer of $FALSE$ otherwise.
+
+The subset sum problem has identical decisions and state to the Knapsack solution.
+
+$dp[i][j]$ is TRUE(1) if there is a subset of gold bars $i…n-1$ (last $n - I$ bars) which weights **exactly** j pounds. When computing $dp[i][j]$, we need to consider all the possible values of $d_{i}$(the decision at step $i$ ), which is whether or not to include bar $i$
+
+
+
+1. Add bar $i$  to the knapsack. In this case, we need to choose a subset of the bars $i+ 1…n-1$ that weights exactly $j - s_{i}$ pounds.  $dp[i + 1][j - s_{i}]$ Indicates whether such a subset exists.
+2. Don't add item $i$ to the knapsack. In this case, the solution rests on a subset of the bars $ i + 1 … n - 1$ that weights exactly $j$ pounds. The answer of whether such a subset exists is in $dp[i + 1][j]$.
+
+
+
+Either of the above avenues yields a solution, so $dp[i][j]$ is $TRUE$ if at least one of the decision possibilities results in a solution. Recall that $OR$ is implemented using $max$ in our boolean in our Boolean logic.
+
+$$ dp[i][j] = max(dp[i + 1][j], dp[i+1][j-s_{i}]) if j \ge S_{i}$$
+
+The initial conditions for this problem are $dp[n][0] = 1(TRUE)$ and $dp[n][j] = 0(FALSE) \forall 1 \le j \le S$.  
+
+```
+for i in {n, n - 1 ... 0}
+    for j in {0, 1 ... S}
+        if i == 0
+            if j == 0
+                dp[i][j] = 1
+            else
+                dp[i][j] = 0
+        else
+            choices = []
+            APPEND(choices, dp[i + 1][j])
+            if j >= Si
+                APPEND(choices, dp[i + 1][j - Si])
+            dp[i][j] = MAX(choices)
+ return dp[0][S]
+     
+```
+
+### DAG Shortest-Path solution
+
+The DAG representation of the problem is also very similar to the knapsack representation, and slightly simpler.
+
+
+
+A vertex$(i,j)$ represents the possibility of finding a subset of the first $i$ bars that weights exactly $j$ pounds. So, if there is a path to vertex(i,j)(the shortest path lengths less than $inf$), then the answer the sub-problem(i,j) is $TRUE$.
+
+The starting vertex is $(0, 0)$ because we can only achieve a weight of 0 pounds using 0 items. The destination vertex is $(n, S)$, because that maps to the goal of finding a subset of all items that weights exactly $S$ pounds.
+
+We only care about the existence of a path, so we can use BFS or DFS on the graph. Alternatively, we can assign the same weight of 1 to all edges, and run the DAG shortest-paths algorithm. Both approaches yield the same running time, but the latter approach maps better the the dynamic programming solution.
+
 
 
 
