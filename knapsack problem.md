@@ -170,6 +170,67 @@ The starting vertex is $(0, 0)$ because we can only achieve a weight of 0 pounds
 
 We only care about the existence of a path, so we can use BFS or DFS on the graph. Alternatively, we can assign the same weight of 1 to all edges, and run the DAG shortest-paths algorithm. Both approaches yield the same running time, but the latter approach maps better the the dynamic programming solution.
 
+## K-Sum
+
+The problem becomes: given $n$ gold bars of weights $s_{0}...s_{n-1}$, can you select exactly K bars whose weights add up to exactly $S$?
+
+### Decision and State
+
+A solution to a problem instance looks the same as for the Knapsack problem, so we still have $n$ boolean decision $d_{0}...d_{n-1}$.
+
+
+
+However, the knapsack structure changed. In the original problem, the knapsack capacity placed a limit on the total weight of the items, so we needed to keep track of total weight of the items that we added. That was our state. In the k-sum problem, the knapsack also has slots. When deciding whether to add a gold bar to the knapsack or not, we need to know if there are any slots available, which is equivalent to knowing how many slots we have used up. So the problem state needs to track both the total weight of the bars in the knapsack, and how many slots they take up.
+
+
+
+### Dynamic Programming Solution
+
+$dp[i][j][k]$ is $TRUE(1)$ if there is a $k$-element subset of the gold bars $i...n-1$ that weighs exactly $j$ pounds. $dp[i][j][k]$ is computed considering all the possibilities values of $d_{i}$ (the decision at step $i$, which is whether or not to include bar $i$).
+
+1. add bar $i$ to the knapsack. In this case, we need to choose a $k - 1$-bar subset of the bars $i+1...n-1$ that weight exactly $j - s_{i}$ pounds. $dp[i+1][j-s_{i}][k-1]$ indicates whether such a subset exists.
+2. Don't add item $i$ to the knapsack. In this case, the solution rests on a $k$-bar $i+1...n-1$ that weight exactly $j$ pounds. The answer of whether such a subset exists is in $dp[i+1][j][k]$
+
+Either of the above avenues yields a solution, so $dp[i][j][k]$ is $TRUE$ if at least one of the decision possibilities results in a solution. The recurrence is below
+
+$dp[i][j][k] = max(dp[i+1][j][k], dp[i+1][j-s_{i}][k-1])$
+
+The initial condition for this problem are $dp[n][0][0] = 1(TRUE)$ and $dp[n][j][k] = 0(FALSE) \forall 1 \le j \le S, 0 \le k \le K$. The interval $n ... n - 1$ contains no items, the corresponding knapsack is empty, which means the only achievable weight is 0.
+
+The answer the original problem is in $dp[0][S][K]$.
+
+```
+KSUM(n, K, S, s)
+for i in {n, n - 1 ... 0}
+    for j in {0, 1 ... S}
+        for k in {0, 1 ... K}
+            if j == 0 and k == 0
+                dp[i][j][k] = 1
+            else
+                dp[i][j][k] = 0
+        else
+            choices = []
+            APPEND(choices, dp[i + 1][j][k])
+            if j >= Si and k > 0
+                APPEND(choices, dp[i+1][j - Si][k-1])
+            dp[i][j][k] = MAX(choices)
+ return dp[0][S][K]
+```
+
+Let's attempt to use edge weights to count the number of bars. Edges from $(i, j)$ to $(i + 1, j)$ will have a cost of $0$, because it means that bar $i$ is not added to the knapsack. Edges from $(i, j)$ to $(i +1, j +s_{i})$ have a cost of 1, as they imply that one bar is added to the knapsack, and therefore one more slot is occupied.
+
+Given the formulation above, we want to find a path from $(0, 0)$ to $(n, S)$ whose cost is exactly $K$. We can draw upon our intuition built from previous graph transformation problems, and realize that we can represent $K$-cost requirement by making $K$ copies of the graph, where each copy $k$ is a layer that captures the paths whose cost is exactly $k$.
+
+Therefore, in the new graph, a vertex $(i, j, k)$ indicates whether there is a $k-cost$ path to vertex $(i, j)$ in the Subset Sum program graph. Each 0-cost edge from $(i, j)$ to $(i+1, j)$ in the old graph maps to K edges from $(i, j, k)$ in the new graph. Each $1-cost$ edge from $(i, j)$ to $(i, j + S_{i})$ maps to $K$ edges $(i, j, k)$ to $(i, j + S_{i}, k+1)$ . In the new graph,  we want to find a path from vertex $(0, 0, 0)$ to vertex $(n, s, K)$. All edges have the same weight.
+
+The Dynamic programming solution solves $O(K.ns)$ sub-problems, and each sub-problem takes $O(1)$ time to solve. The solution's total running time is $O(KnS)$
+
+The DAG has $K + 1$ layers of $O(nS)$ vertices, and K copies of the $O(nS)$ edges in the Knapsack graph. Therefore, the running time is $O(V+E) = O(KnS)$
+
+
+
+
+
 
 
 
