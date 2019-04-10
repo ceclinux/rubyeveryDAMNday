@@ -43,11 +43,85 @@ namespace HelloWorld
             // 如果項為值類型，將他們添加到列表時必須將其裝箱，檢索它們時必須取消裝箱。轉換與裝箱/取消裝箱
             // 這兩種操作到會降低性能；在必須循環訪問大型集合的方案中，裝箱與取消裝箱的影響非常大
 
-            // Boxing is the process of converting a va
+            //另一局限是缺少編譯時類型檢查；由於ArrayList將所有內容都轉換為`Object`，因此在編譯時無法阻止客戶端代碼執行如下操作
+
+
+            // System.Collections.ArrayList list = new System.Collections.ArrayList();
+            // // Add an integer to the list.
+            // list.Add(3);
+            // // Add a string to the list. This will compile, but may cause an error later.
+            // list.Add("It is raining in Redmond.");
+
+            // int t = 0;
+            // // This causes an InvalidCastException to be returned.
+            // foreach (int x in list)
+            // {
+            //     t += x;
+            // }
+            // Boxing is the process of converting a value type to the type `object` or to any interface type implemented 
+            // by this value type. When CLR boxes a value type, it wraps the value inside a System. Object and stores
+            // it on the managed heap. Unboxing extracts the value type from the object. Boxing is implicit; unboxing is explicit.
+            // The concept of boxing and unboxing underlies the C# unified view of the type system in
+            // which a vaule of any type can be treated as an object.
+
+            int i = 123;
+            // The following line boxes i.
+            object o = i;
+
+            o = 123;
+            i = (int)o; //unboxing
+
+
+            //String.concat example
+            //it takes three object values here. Both 42 and true must be boxed
+            Console.WriteLine(String.Concat("Answer", 42, true));
 
             // A variable of value type contains a value of the type. For example, a varibale
             // of the `int` type might contain the value `42`. This differes from a variable of a reference type, 
-            // which contains a reference to an instance of the type, also known as an object
+            // which contains a reference to an instance of the type, also known as an object.                
+
+            // Boxing is used to store value types in the garbage-collected heap. Boxing is 
+            // an implicit conversion of a value type `object` or to any interface type implemented by
+            // this value type. Boxing a value type allocates an object instance on the heap and copies the value into
+            // the new object
+
+            // see here
+            //https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/types/media/boxing-and-unboxing/unboxing-conversion-operation.gif
+
+            //類型參數的約束
+            //約束告知編譯器類型參數必須具備的功能。在沒有任何約束的情況下，類型參數可以是任何類型。
+            // 編譯器智能假定System.Object的成員，它是任何.NET類型的最終基類。如果客戶端代碼嘗試使用約束所不允許的類型來
+            //實例化類，則會產生編譯時錯誤。通過使用`where`上下文關鍵字指定約束。
+
+            //where T : class 	类型参数必须是引用类型。 此约束还应用于任何类、接口、委托或数组类型。
+
+    
+            TestStringEquality();
+            
         }
+            public static void OpEqualsTest<T>(T s, T t) where T : class
+{
+    //在應用`where T: class`約束時，請避免對類型參數使用`==`和`!=`運算符，這些運算符僅測試引用標誌而不測試
+    //相等性。即使再用作參數的類型中重載這些運算符也會發生此行為。下面的代碼說明了這一點；即使String類重載了`==`
+    //運算符，輸出也為`false`
+    System.Console.WriteLine(s == t);
+    string first = "aaa";
+    string second = first.ToString();
+    System.Console.WriteLine(second == first);
+}
+private static void TestStringEquality()
+{
+    string s1 = "target";
+    System.Text.StringBuilder sb = new System.Text.StringBuilder("target");
+    string s2 = sb.ToString();
+    OpEqualsTest<string>(s1, s2);
+}
     }
+
+
+    //可以對統一類型參數引用多個約束，並且約束自身可以是泛型類型， 如下所示
+    // class EmployeeList<T> where T : Employee, IEmployee, System.IComparable<T>, new()
+    // {
+    // }
+
 }
