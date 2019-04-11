@@ -95,27 +95,80 @@ namespace HelloWorld
 
             //where T : class 	类型参数必须是引用类型。 此约束还应用于任何类、接口、委托或数组类型。
 
-    
+
             TestStringEquality();
+            Customer cust1 = new Customer(4987.63, "Northwind", 90108);
+            cust1.TotalPurchases += 499.99;
+            Console.WriteLine(cust1.TotalPurchases);
+
+            // Creating a static class is therefore basically the same as
+            // creating a class that contains only static members and a private
+            // constructor. A private constructor prevents the class from being 
+            // instantiated. The advantange of using a static class is taht the
+            // compiler can check to make sure that no instance members are
+            // accidentally added. 
+
+            // The following list provides the main features of a static class:
+            // - contains only static members.
+            // - cannot be instanitated
+            // - is sealed
+            // - cannot contain Instance Constructors
             
+            F f = new F();
+            f.DoWork(2);
+            D d = new Q();
+            d.TestVirtual();
         }
-            public static void OpEqualsTest<T>(T s, T t) where T : class
-{
-    //在應用`where T: class`約束時，請避免對類型參數使用`==`和`!=`運算符，這些運算符僅測試引用標誌而不測試
-    //相等性。即使再用作參數的類型中重載這些運算符也會發生此行為。下面的代碼說明了這一點；即使String類重載了`==`
-    //運算符，輸出也為`false`
-    System.Console.WriteLine(s == t);
-    string first = "aaa";
-    string second = first.ToString();
-    System.Console.WriteLine(second == first);
-}
-private static void TestStringEquality()
-{
-    string s1 = "target";
-    System.Text.StringBuilder sb = new System.Text.StringBuilder("target");
-    string s2 = sb.ToString();
-    OpEqualsTest<string>(s1, s2);
-}
+
+        public class D
+        {
+            // The `virual` keyword is used to modify a method, property,
+            // indexr, or event declaration and allow for it to be overriden
+            // in a derived class.
+            public virtual void DoWork(int i)
+            {
+
+            }
+
+            public virtual void TestVirtual(){
+                Console.WriteLine("in d");
+            }
+        }
+        public class Q:D{
+            public override void TestVirtual(){
+                Console.WriteLine("in q");
+            }
+        }
+        public abstract class E : D
+        {
+            public abstract override void DoWork(int s);
+
+        }
+        public class F : E
+        {
+            public override void DoWork(int i)
+            {
+                Console.WriteLine("here we go");
+            }
+        }
+
+        public static void OpEqualsTest<T>(T s, T t) where T : class
+        {
+            //在應用`where T: class`約束時，請避免對類型參數使用`==`和`!=`運算符，這些運算符僅測試引用標誌而不測試
+            //相等性。即使再用作參數的類型中重載這些運算符也會發生此行為。下面的代碼說明了這一點；即使String類重載了`==`
+            //運算符，輸出也為`false`
+            System.Console.WriteLine(s == t);
+            string first = "aaa";
+            string second = first.ToString();
+            System.Console.WriteLine(second == first);
+        }
+        private static void TestStringEquality()
+        {
+            string s1 = "target";
+            System.Text.StringBuilder sb = new System.Text.StringBuilder("target");
+            string s2 = sb.ToString();
+            OpEqualsTest<string>(s1, s2);
+        }
     }
 
 
@@ -123,5 +176,31 @@ private static void TestStringEquality()
     // class EmployeeList<T> where T : Employee, IEmployee, System.IComparable<T>, new()
     // {
     // }
+    class Customer
+    {
+        public double TotalPurchases { get; set; }
+        public string Name { get; set; }
+        public int CustomerID { get; set; }
 
+        public Customer(double purchases, string name, int ID)
+        {
+            TotalPurchases = purchases;
+            Name = name;
+            CustomerID = ID;
+        }
+
+        // Use the async modifier to specify that a method, lambda expression, or
+        // anonymous method is asynchronous. If you use this modifier on a method or expression, it is referred to
+        // as an async method. The following example defined an async method named `ExampleMethodAsync`
+
+        public async Task<int> ExampleMethodAsync(){
+
+        }
+
+        // The Task asynchronous programming model(TAP) provides an abstraction over asynchronous code. You write code as a sequence of statements, just like always. You can read the code as though each statement completes before the next begins. The complier performs a number of transformations because some of those statements may start work and return a `Task` that represent the ongoing work.
+
+        // That's the goal of this syntax: enable code reads like a sequence of statements, but executes in a much complicated order based on external resource allocation and when tasks complete.
+
+        //These concerns are important for the programs you write today. When you write client programs, you want the UI to be responsive to use input. Your application shouldn't make a phone appear frozen while it's downloading data from the web. When you write server programs, you don't want threads blocked. Those threads could be serving other requests.
+    }
 }
