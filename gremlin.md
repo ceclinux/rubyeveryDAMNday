@@ -120,3 +120,73 @@ gremlin> g.V(1).out('knows').has('age', gt(30)).values('name') //7\
 5. Get the names of the people that the vertex with the unique identifier of "1" "knows"
 6. Note that when on uses `outE().inV()` as shown in the previous command, this can be shortened to just `out()` (similar to `inE().outV()` and `in()` for incoming edges).
 7. Get the names of the people vertex "1" knows who are over the age of 30.
+
+There are a number of important things to consider in the above code. First, recall that `id` is "reserved" for special usage in TinkerPop and is a member of the   enum, `T`.  Those "keys" supplied to the creation method are statically imported to the console, which allows you to access them without having to specify their owning enum. 
+
+"What software has Marko created?"
+
+Let's start with finding "marko". This operation is a filtering step as it searches the full set of vertices to match
+
+```
+g.V().has('name','marko')
+```
+
+This bit of Gremlin can be improved and made more idiomatically pleasing by including the vertex label as part of the filter to ensure that the "name" property key refers to a "person" vertex
+
+```
+g.V().has('person', 'name', 'marko')
+```
+
+is same as
+
+```
+g.V().hasLabel('person').has('name', 'marko')
+```
+
+Hence, any traversal that’s going to be used in production code should
+also specify the vertex label to prevent the query engine from searching every index for the provided property value.
+
+```
+gremlin> g.V().has('person', 'name', 'marko').outE('created').inV()
+==>v[3]
+```
+
+is same as 
+
+```
+g.V().has('person','name','marko').out('created')
+```
+
+You can therefore ask Gremlin to extract the value of the "name" property as follows:
+
+```
+g.V().has('person', 'name', 'marko') .out('created').values('name')
+```
+
+What if we wanted Gremlin to find the "age" values of both "vadas" and "marko"? In this case we could use the `within` comparator with `has()` as follows:
+
+```
+g.V().has('person','name',within('vadas','marko')).values('age').mean()
+```
+
+To find out who "created" that "software", we need to have Gremlin traverse back in along the "created" edges to find the "person" vertices tied to it.
+
+```
+gremlin> g.V().has('person', 'name', 'marko').out('created').in('created').values('name')
+==>marko
+==>josh
+==>peter
+```
+
+excluding `marko`
+
+```
+ g.V().has('person','name','marko').as('exclude').
+           out('created').in('created').
+           where(neq('exclude')).
+           values('name')
+```
+
+We made two additions to the traversal to make it exclude "marko" from the results. First, we added the `as()` step. The `as()` step is not really a "step", but a "step modulator" - something that adds features to a step or the traversal. Here the `as('exclude')` labels the `has()` step with the name "exclude" and all values that pass through that step are held in that label for later use. In this case, the "marko" vertex is the only vertex to pass through that point, so it is held in "exclude".
+
+The other addition that was made was the `where()` step which is a filter step like `has()`. The `where()` is positioned after `in()` step that has "person" vertices, which means that the `where()` filter is occurring  on the list of "marko" collaborators. The `where()` specifies that the "person" vertices passing throught it should not equal `neq()` the content of the `exclude` label.
