@@ -190,3 +190,10 @@ excluding `marko`
 We made two additions to the traversal to make it exclude "marko" from the results. First, we added the `as()` step. The `as()` step is not really a "step", but a "step modulator" - something that adds features to a step or the traversal. Here the `as('exclude')` labels the `has()` step with the name "exclude" and all values that pass through that step are held in that label for later use. In this case, the "marko" vertex is the only vertex to pass through that point, so it is held in "exclude".
 
 The other addition that was made was the `where()` step which is a filter step like `has()`. The `where()` is positioned after `in()` step that has "person" vertices, which means that the `where()` filter is occurring  on the list of "marko" collaborators. The `where()` specifies that the "person" vertices passing throught it should not equal `neq()` the content of the `exclude` label.
+
+gremlin>  g.addE('votesFor').from(g.V(1)).to(g.V(2)).iterate()
+gremlin>  g.addE('votesFor').from(g.V(3)).to(g.V(4))
+==>e[14][3-votesFor->4]
+gremlin> g.V().outE('votesFor')
+==>e[13][1-votesFor->2]
+==>e[14][3-votesFor->4]
