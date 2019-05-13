@@ -1,0 +1,203 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## 看到new的时候，就会想到具体"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "是的，当使用“new”时，你的确是在实例化一个具体类，所以用的的确是实现，而不是接口。这是一个好问题，你已经知道了代码绑着具体类会导致代码更脆弱，更缺乏弹性。"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "```java\n",
+    "Duck duck = new MallardDuck();\n",
+    "```"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "当有一群相关的具体类时，通常会写出这样的代码"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "```java\n",
+    "Duck duck;\n",
+    "\n",
+    "if(pacnic){\n",
+    "  duck = new MallardDuck();\n",
+    "}else if(hunting){\n",
+    "  duck = new RubberDuck();\n",
+    "}\n",
+    "```"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "当看到这样的代码，一旦有变化或扩展，就必须重新打开这段代码进行检查和修改。通常这样修改过得代码将早晨各部分系统更难为何和更新，而且也更容易犯错"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "针对接口编程，可以隔离掉以后系统可能发生的一大堆改变。为什么呢？如果代码是针对接口而写的，那么通过多态，它可以与任何新类实现该接口。但是，当代码使用大量的具体类时，等于是自找麻烦，因为一旦加入新的具体类，就必须改变代码。也就是说，你的代码并非“对修改关系”。想用新的具体类型来扩展代码，必须重新打开它。"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## 对扩展开放，对修改关闭，找出会变化的方面，吧它们从不变的部分脱离出来"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "```java\n",
+    "Pizza orderPizza(){\n",
+    "  if(type.equals(\"cheese\"){\n",
+    "    pizza = new CheesePizza();\n",
+    "                          }else if(type.equals(\"greek\"){\n",
+    "    pizza = new GreekPizza();\n",
+    "                                                       }else if(type.equals(\"pepperoni\"){\n",
+    "    pizza = new PepperoniPizze();\n",
+    "                                                                                        }\n",
+    "\n",
+    "  pizza.prepare();\n",
+    "  pizza.bake();\n",
+    "  pizza.cut();\n",
+    "  pizza.box();\n",
+    "  return pizza;\n",
+    "}\n",
+    "```"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "**工厂（factory）处理创建对象的细节**"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "**这样做有什么好处？似乎只是把问题搬到另一个对象罢了，问题依然存在**。别忘了，`SimplePizzaFactory`可以有许多的客户。虽然目前制单到`orderPizza()`方法时它的客户，然而，可能还有`PizzaShopMenu（比萨店菜单）`类，会利用这个工厂来取得比萨的价钱和描述。可能还有一个`HomeDelivery（宅急送）`类，会以与`PizzaShop`类不同的方式来处理比萨。总而言之，`SimplePizzaFactory`可以用许多的客户。"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "所以，吧构建比萨的代码包装进一个类，当以后实现改变时，只需修改这个类即可"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "```java\n",
+    "public class SimplePizzaFactory{\n",
+    "  public Pizza createPizza(String type){\n",
+    "  pizza = new CheesePizza();\n",
+    "}else if(type.equals(\"pepperoni)){\n",
+    "  pizza = new ClamPizze();\n",
+    "}\n",
+    "}\n",
+    "}\n",
+    "```"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "```java\n",
+    "public class PizzaStore{\n",
+    "  SimplePizzaFactory factory;\n",
+    "\n",
+    "public PizzaStore(SimplePizzaFactory factory){\n",
+    "  this.factory = factory;\n",
+    "}\n",
+    "\n",
+    "public Pizza orderPizza(String type){\n",
+    "\n",
+    "Pizza pizza;\n",
+    "\n",
+    "pizza = factory.createPizza(type);\n",
+    "\n",
+    "pizza.prepare();\n",
+    "pizza.bake();\n",
+    "pizza.cut();\n",
+    "...\n",
+    "return pizza\n",
+    "}\n",
+    "}\n",
+    "```"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "简单工厂其实不是一个设计模式，反而比较像是一种编程习惯。"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "有个做法可以让披萨制作活动"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Ruby 2.5.1",
+   "language": "ruby",
+   "name": "ruby"
+  },
+  "language_info": {
+   "file_extension": ".rb",
+   "mimetype": "application/x-ruby",
+   "name": "ruby",
+   "version": "2.5.1"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 2
+}
